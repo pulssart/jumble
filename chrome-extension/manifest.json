@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Jumble Clipper",
+  "version": "1.0",
+  "description": "Ajoutez du contenu à votre Jumble en un clic",
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "host_permissions": ["http://localhost:3001/*"],
+  "action": {
+    "default_title": "Ajouter au Jumble"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3001/*"],
+      "js": ["bridge.js"]
+    }
+  ]
+}
+
