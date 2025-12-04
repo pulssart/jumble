@@ -5,6 +5,7 @@ import { GifElement } from "@/types/canvas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Upload, Link as LinkIcon, Image as ImageIcon } from "lucide-react"
+import { useLanguage } from "@/lib/language"
 
 interface GifCardProps {
   element: GifElement
@@ -12,6 +13,7 @@ interface GifCardProps {
 }
 
 export function GifCard({ element, onUpdate }: GifCardProps) {
+  const { language } = useLanguage()
   const [gifLoaded, setGifLoaded] = useState(false)
   const [gifError, setGifError] = useState(false)
   const [urlInput, setUrlInput] = useState("")
@@ -156,10 +158,10 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
       // Vérifier que l'URL pointe vers un GIF
       const url = urlInput.trim().toLowerCase()
       if (!url.endsWith('.gif') && !url.includes('gif')) {
-        alert("Veuillez entrer une URL vers un fichier GIF")
+        alert(language === "fr" ? "Veuillez entrer une URL vers un fichier GIF" : "Please enter a URL to a GIF file")
         return
       }
-      onUpdate({ ...element, src: urlInput.trim(), alt: "GIF animé" })
+      onUpdate({ ...element, src: urlInput.trim(), alt: language === "fr" ? "GIF animé" : "Animated GIF" })
     }
   }
 
@@ -193,7 +195,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
       }
       reader.readAsDataURL(file)
     } else if (file) {
-      alert("Veuillez déposer un fichier GIF")
+      alert(language === "fr" ? "Veuillez déposer un fichier GIF" : "Please drop a GIF file")
     }
   }
 
@@ -209,7 +211,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
       >
         <div className="flex items-center gap-2 text-gray-700 font-medium border-b border-gray-100 pb-2">
           <ImageIcon className="w-4 h-4" />
-          <span>Ajouter un GIF animé</span>
+          <span>{language === "fr" ? "Ajouter un GIF animé" : "Add an animated GIF"}</span>
         </div>
         
         <div className="flex flex-col gap-3">
@@ -220,7 +222,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <Upload className="w-4 h-4 mr-2" />
-            Uploader un GIF
+            {language === "fr" ? "Uploader un GIF" : "Upload a GIF"}
           </Button>
           <input
             ref={fileInputRef}
@@ -235,7 +237,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
               <span className="w-full border-t border-gray-100" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-400">ou lien</span>
+              <span className="bg-white px-2 text-gray-400">{language === "fr" ? "ou lien" : "or link"}</span>
             </div>
           </div>
 

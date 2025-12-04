@@ -32,8 +32,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import Logo from "../../logo.png"
+import { useLanguage } from "@/lib/language"
 
 export function InfiniteCanvas() {
+  const { language, setLanguage } = useLanguage()
+
   // Space State
   const [spaces, setSpaces] = useState<Space[]>([])
   const [currentSpaceId, setCurrentSpaceIdState] = useState<string | null>(null)
@@ -129,7 +132,7 @@ export function InfiniteCanvas() {
   }
 
   const handleCreateSpace = () => {
-    const newSpace = createSpace("Nouveau Jumble")
+    const newSpace = createSpace(language === "fr" ? "Nouveau Jumble" : "New Jumble")
     setSpaces(getSpaces())
     handleSwitchSpace(newSpace.id)
   }
@@ -1951,13 +1954,15 @@ export function InfiniteCanvas() {
             <Button variant="ghost" size="sm" className="rounded-full h-9 px-3 text-gray-700 hover:bg-gray-100 border-r border-gray-200/50 rounded-r-none mr-1">
               <LayoutGrid className="h-4 w-4 mr-2 text-gray-500" />
               <span className="max-w-[100px] truncate font-medium">
-                {spaces.find(s => s.id === currentSpaceId)?.name || "Mon Jumble"}
+                {spaces.find(s => s.id === currentSpaceId)?.name || (language === "fr" ? "Mon Jumble" : "My Jumble")}
               </span>
               <ChevronDown className="h-3 w-3 ml-2 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64">
-            <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase">Mes Jumbles</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase">
+              {language === "fr" ? "Mes Jumbles" : "My Jumbles"}
+            </DropdownMenuLabel>
             {spaces.map(space => (
               <DropdownMenuItem 
                 key={space.id} 
@@ -1990,12 +1995,12 @@ export function InfiniteCanvas() {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleCreateSpace}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nouveau Jumble
+                {language === "fr" ? "Nouveau Jumble" : "New Jumble"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={openRenameDialog}>
                 <PenLine className="h-4 w-4 mr-2" />
-                Renommer le Jumble actuel
+                {language === "fr" ? "Renommer le Jumble actuel" : "Rename current Jumble"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -2004,25 +2009,25 @@ export function InfiniteCanvas() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="rounded-full h-9 px-4 text-gray-700 hover:bg-gray-100">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter
+              {language === "fr" ? "Ajouter" : "Add"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="w-56 my-2">
             <DropdownMenuItem onClick={() => addElement("text")}>
               <Type className="h-4 w-4 mr-2" />
-              Texte
+              {language === "fr" ? "Texte" : "Text"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("task")}>
               <CheckSquare className="h-4 w-4 mr-2" />
-              Tâche
+              {language === "fr" ? "Tâche" : "Task"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("postit")}>
               <StickyNote className="h-4 w-4 mr-2" />
-              Post-it
+              {language === "fr" ? "Post-it" : "Sticky note"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("prompt")}>
               <Zap className="h-4 w-4 mr-2 text-yellow-500" />
-              Prompt IA
+              {language === "fr" ? "Prompt IA" : "AI Prompt"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("youtube")}>
               <Youtube className="h-4 w-4 mr-2" />
@@ -2058,23 +2063,23 @@ export function InfiniteCanvas() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("link")}>
               <LinkIcon className="h-4 w-4 mr-2" />
-              Lien Web
+              {language === "fr" ? "Lien Web" : "Web link"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("webcam")}>
               <Video className="h-4 w-4 mr-2" />
-              Webcam
+              {language === "fr" ? "Webcam" : "Webcam"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("gif")}>
               <Image className="h-4 w-4 mr-2" />
-              GIF animé
+              {language === "fr" ? "GIF animé" : "Animated GIF"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("image")}>
               <Image className="h-4 w-4 mr-2" />
-              Image
+              {language === "fr" ? "Image" : "Image"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("clock")}>
               <Clock className="h-4 w-4 mr-2" />
-              Horloge
+              {language === "fr" ? "Horloge" : "Clock"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -2100,29 +2105,33 @@ export function InfiniteCanvas() {
           size="sm" 
           className="rounded-full h-9 px-4 text-gray-700 hover:bg-gray-100"
           onClick={() => setShowOrganizeWarning(true)}
-          title="Réorganiser automatiquement"
+          title={language === "fr" ? "Réorganiser automatiquement" : "Auto-organize"}
         >
           <Wand2 className="h-4 w-4 mr-2" />
-          Organiser
+          {language === "fr" ? "Organiser" : "Organize"}
         </Button>
 
         <Dialog open={showOrganizeWarning} onOpenChange={setShowOrganizeWarning}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Organiser les éléments</DialogTitle>
+              <DialogTitle>
+                {language === "fr" ? "Organiser les éléments" : "Organize elements"}
+              </DialogTitle>
               <DialogDescription>
-                L'organisation automatique va réarranger tous vos éléments et modifier leur disposition actuelle. Cette action est irréversible. Voulez-vous continuer ?
+                {language === "fr"
+                  ? "L'organisation automatique va réarranger tous vos éléments et modifier leur disposition actuelle. Cette action est irréversible. Voulez-vous continuer ?"
+                  : "Automatic organization will rearrange all your elements and change their current layout. This action cannot be undone. Do you want to continue?"}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowOrganizeWarning(false)}>
-                Annuler
+                {language === "fr" ? "Annuler" : "Cancel"}
               </Button>
               <Button onClick={() => {
                 organizeElements()
                 setShowOrganizeWarning(false)
               }}>
-                Organiser
+                {language === "fr" ? "Organiser" : "Organize"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -2131,17 +2140,21 @@ export function InfiniteCanvas() {
         <Dialog open={showMultiDeleteWarning} onOpenChange={setShowMultiDeleteWarning}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Supprimer la sélection</DialogTitle>
+              <DialogTitle>
+                {language === "fr" ? "Supprimer la sélection" : "Delete selection"}
+              </DialogTitle>
               <DialogDescription>
-                Vous êtes sur le point de supprimer {selectedIds.length} éléments. Cette action est irréversible.
+                {language === "fr"
+                  ? `Vous êtes sur le point de supprimer ${selectedIds.length} éléments. Cette action est irréversible.`
+                  : `You are about to delete ${selectedIds.length} items. This action cannot be undone.`}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowMultiDeleteWarning(false)}>
-                Annuler
+                {language === "fr" ? "Annuler" : "Cancel"}
               </Button>
               <Button variant="destructive" onClick={handleDeleteSelection}>
-                Supprimer
+                {language === "fr" ? "Supprimer" : "Delete"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -2156,30 +2169,36 @@ export function InfiniteCanvas() {
               variant="ghost" 
               size="icon" 
               className="rounded-full h-9 w-9 text-gray-700 hover:bg-gray-100"
-              title="Raccourcis clavier"
+              title={language === "fr" ? "Raccourcis clavier" : "Keyboard shortcuts"}
             >
               <Keyboard className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
-              <DialogTitle>Raccourcis clavier</DialogTitle>
+              <DialogTitle>
+                {language === "fr" ? "Raccourcis clavier" : "Keyboard shortcuts"}
+              </DialogTitle>
               <DialogDescription>
-                Utilise ces raccourcis pour naviguer plus vite dans ton espace.
+                {language === "fr"
+                  ? "Utilise ces raccourcis pour naviguer plus vite dans ton espace."
+                  : "Use these shortcuts to navigate faster in your space."}
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 space-y-4 text-sm">
               <div className="space-y-1">
-                <p className="font-medium text-gray-700">Navigation dans le canvas</p>
+                <p className="font-medium text-gray-700">
+                  {language === "fr" ? "Navigation dans le canvas" : "Canvas navigation"}
+                </p>
                 <ul className="space-y-1 text-gray-600">
                   <li className="flex justify-between gap-4">
-                    <span>Panoramique</span>
+                    <span>{language === "fr" ? "Panoramique" : "Pan"}</span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       ⌘ / Ctrl + drag
                     </span>
                   </li>
                   <li className="flex justify-between gap-4">
-                    <span>Zoomer / Dézoomer</span>
+                    <span>{language === "fr" ? "Zoomer / Dézoomer" : "Zoom in / out"}</span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       ⌘ / Ctrl + molette
                     </span>
@@ -2188,22 +2207,30 @@ export function InfiniteCanvas() {
               </div>
 
               <div className="space-y-1">
-                <p className="font-medium text-gray-700">Sélection & déplacement</p>
+                <p className="font-medium text-gray-700">
+                  {language === "fr" ? "Sélection & déplacement" : "Selection & move"}
+                </p>
                 <ul className="space-y-1 text-gray-600">
                   <li className="flex justify-between gap-4">
-                    <span>Sélection multiple (clic)</span>
+                    <span>
+                      {language === "fr" ? "Sélection multiple (clic)" : "Multi-selection (click)"}
+                    </span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       ⇧ Shift + clic
                     </span>
                   </li>
                   <li className="flex justify-between gap-4">
-                    <span>Sélection rectangulaire</span>
+                    <span>
+                      {language === "fr" ? "Sélection rectangulaire" : "Rectangular selection"}
+                    </span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       Drag sur le fond
                     </span>
                   </li>
                   <li className="flex justify-between gap-4">
-                    <span>Alignement / snap des cartes</span>
+                    <span>
+                      {language === "fr" ? "Alignement / snap des cartes" : "Card snapping / alignment"}
+                    </span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       ⌥ Alt pendant le drag
                     </span>
@@ -2212,16 +2239,22 @@ export function InfiniteCanvas() {
               </div>
 
               <div className="space-y-1">
-                <p className="font-medium text-gray-700">IA & câbles</p>
+                <p className="font-medium text-gray-700">
+                  {language === "fr" ? "IA & câbles" : "AI & cables"}
+                </p>
                 <ul className="space-y-1 text-gray-600">
                   <li className="flex justify-between gap-4">
-                    <span>Tirer un câble</span>
+                    <span>
+                      {language === "fr" ? "Tirer un câble" : "Start a cable"}
+                    </span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       Drag depuis le port droit
                     </span>
                   </li>
                   <li className="flex justify-between gap-4">
-                    <span>Connecter une carte</span>
+                    <span>
+                      {language === "fr" ? "Connecter une carte" : "Connect a card"}
+                    </span>
                     <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
                       Lâcher sur le port gauche
                     </span>
@@ -2230,7 +2263,9 @@ export function InfiniteCanvas() {
               </div>
 
               <p className="text-xs text-gray-400">
-                Astuce : colle du texte ou des images directement dans le canvas (Cmd/Ctrl + V) pour créer des cartes automatiquement.
+                {language === "fr"
+                  ? "Astuce : colle du texte ou des images directement dans le canvas (Cmd/Ctrl + V) pour créer des cartes automatiquement."
+                  : "Tip: paste text or images directly into the canvas (Cmd/Ctrl + V) to create cards automatically."}
               </p>
             </div>
           </DialogContent>
@@ -2242,23 +2277,27 @@ export function InfiniteCanvas() {
               variant="ghost" 
               size="icon" 
               className="rounded-full h-9 w-9 text-gray-700 hover:bg-gray-100"
-              title="Paramètres"
+              title={language === "fr" ? "Paramètres" : "Settings"}
             >
               <Settings className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Paramètres</DialogTitle>
+              <DialogTitle>
+                {language === "fr" ? "Paramètres" : "Settings"}
+              </DialogTitle>
             </DialogHeader>
             
             <div className="py-4 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Onboarding
+                  {language === "fr" ? "Onboarding" : "Onboarding"}
                 </label>
                 <p className="text-xs text-gray-500">
-                  Rouvrez la présentation de Jumble pour revoir les bases.
+                  {language === "fr"
+                    ? "Rouvrez la présentation de Jumble pour revoir les bases."
+                    : "Reopen Jumble's introduction to review the basics."}
                 </p>
                 <Button
                   variant="outline"
@@ -2270,35 +2309,64 @@ export function InfiniteCanvas() {
                     }
                   }}
                 >
-                  Revoir l’onboarding
+                  {language === "fr" ? "Revoir l’onboarding" : "Open onboarding"}
                 </Button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {language === "fr" ? "Langue" : "Language"}
+                </label>
+                <p className="text-xs text-gray-500">
+                  {language === "fr"
+                    ? "Choisissez la langue de l’interface de Jumble."
+                    : "Choose the language of Jumble’s interface."}
+                </p>
+                <div className="flex gap-2 mt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={language === "fr" ? "default" : "outline"}
+                    onClick={() => setLanguage("fr")}
+                  >
+                    Français
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={language === "en" ? "default" : "outline"}
+                    onClick={() => setLanguage("en")}
+                  >
+                    English
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Palette className="h-4 w-4" />
-                  Couleur de fond
+                  {language === "fr" ? "Couleur de fond" : "Background color"}
                 </label>
                 <div className="grid grid-cols-5 gap-2">
-                  {[
-                    { class: "bg-gray-50", name: "Gris (Défaut)" },
-                    { class: "bg-white", name: "Blanc" },
-                    { class: "bg-blue-50", name: "Bleu" },
-                    { class: "bg-yellow-50", name: "Jaune" },
-                    { class: "bg-rose-50", name: "Rose" },
-                    { class: "bg-green-50", name: "Vert" },
-                    { class: "bg-slate-100", name: "Ardoise" },
-                    { class: "bg-stone-100", name: "Pierre" },
-                    { class: "bg-orange-50", name: "Orange" },
-                    { class: "bg-indigo-50", name: "Indigo" },
-                  ].map((color) => (
+                    {[
+                      { class: "bg-gray-50", nameFr: "Gris (Défaut)", nameEn: "Gray (Default)" },
+                      { class: "bg-white", nameFr: "Blanc", nameEn: "White" },
+                      { class: "bg-blue-50", nameFr: "Bleu", nameEn: "Blue" },
+                      { class: "bg-yellow-50", nameFr: "Jaune", nameEn: "Yellow" },
+                      { class: "bg-rose-50", nameFr: "Rose", nameEn: "Pink" },
+                      { class: "bg-green-50", nameFr: "Vert", nameEn: "Green" },
+                      { class: "bg-slate-100", nameFr: "Ardoise", nameEn: "Slate" },
+                      { class: "bg-stone-100", nameFr: "Pierre", nameEn: "Stone" },
+                      { class: "bg-orange-50", nameFr: "Orange", nameEn: "Orange" },
+                      { class: "bg-indigo-50", nameFr: "Indigo", nameEn: "Indigo" },
+                    ].map((color) => (
                     <button
                       key={color.class}
                       className={`w-8 h-8 rounded-full border border-gray-200 ${color.class} ${
                         bgColor === color.class ? "ring-2 ring-black ring-offset-2" : "hover:scale-110 transition-transform"
                       }`}
                       onClick={() => setBgColor(color.class)}
-                      title={color.name}
+                      title={language === "fr" ? color.nameFr : color.nameEn}
                     />
                   ))}
                 </div>
@@ -2307,7 +2375,7 @@ export function InfiniteCanvas() {
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Key className="h-4 w-4" />
-                  Clé API OpenAI
+                  {language === "fr" ? "Clé API OpenAI" : "OpenAI API key"}
                 </label>
                 <Input
                   type="password"
@@ -2316,13 +2384,15 @@ export function InfiniteCanvas() {
                   onChange={(e) => setOpenAIKey(e.target.value)}
                 />
                 <p className="text-xs text-gray-500">
-                  Votre clé est stockée localement dans votre navigateur.
+                  {language === "fr"
+                    ? "Votre clé est stockée localement dans votre navigateur."
+                    : "Your key is stored locally in your browser."}
                 </p>
               </div>
 
               <div className="border-t pt-4 mt-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                  Gestion du Jumble
+                  {language === "fr" ? "Gestion du Jumble" : "Jumble management"}
                 </label>
                 <div className="flex gap-2">
                   <Button 
@@ -2331,7 +2401,7 @@ export function InfiniteCanvas() {
                     onClick={handleExportSpace}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Exporter
+                    {language === "fr" ? "Exporter" : "Export"}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -2339,11 +2409,13 @@ export function InfiniteCanvas() {
                     onClick={handleImportClick}
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    Importer
+                    {language === "fr" ? "Importer" : "Import"}
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Sauvegardez ou restaurez l'intégralité de votre Jumble (éléments, positions, réglages).
+                  {language === "fr"
+                    ? "Sauvegardez ou restaurez l'intégralité de votre Jumble (éléments, positions, réglages)."
+                    : "Save or restore your entire Jumble (elements, positions, settings)."}
                 </p>
               </div>
             </div>

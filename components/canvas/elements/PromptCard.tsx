@@ -5,6 +5,7 @@ import { PromptElement } from "@/types/canvas"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Play, Loader2, Zap, Type, Image as ImageIcon } from "lucide-react"
+import { useLanguage } from "@/lib/language"
 
 interface PromptCardProps {
   element: PromptElement
@@ -13,6 +14,7 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ element, onUpdate, onRun }: PromptCardProps) {
+  const { language } = useLanguage()
   const [prompt, setPrompt] = useState(element.content || "")
 
   const handleRun = (e: React.MouseEvent) => {
@@ -30,7 +32,7 @@ export function PromptCard({ element, onUpdate, onRun }: PromptCardProps) {
       <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-3">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-400" />
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-300">Prompt IA</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-300">{language === "fr" ? "Prompt IA" : "AI Prompt"}</span>
         </div>
         
         {/* Output Selector */}
@@ -39,7 +41,7 @@ export function PromptCard({ element, onUpdate, onRun }: PromptCardProps) {
               className={`p-1 rounded transition-colors ${(!element.outputType || element.outputType === 'text') ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={(e) => { e.stopPropagation(); onUpdate({ ...element, outputType: 'text' }) }}
               onMouseDown={(e) => e.stopPropagation()}
-              title="Générer du texte"
+              title={language === "fr" ? "Générer du texte" : "Generate text"}
             >
               <Type className="w-3 h-3" />
             </button>
@@ -47,7 +49,7 @@ export function PromptCard({ element, onUpdate, onRun }: PromptCardProps) {
               className={`p-1 rounded transition-colors ${element.outputType === 'image' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={(e) => { e.stopPropagation(); onUpdate({ ...element, outputType: 'image' }) }}
               onMouseDown={(e) => e.stopPropagation()}
-              title="Générer une image"
+              title={language === "fr" ? "Générer une image" : "Generate an image"}
             >
               <ImageIcon className="w-3 h-3" />
             </button>
@@ -61,7 +63,10 @@ export function PromptCard({ element, onUpdate, onRun }: PromptCardProps) {
           onChange={(e) => setPrompt(e.target.value)}
           onBlur={handleBlur}
           onMouseDown={(e) => e.stopPropagation()}
-          placeholder={element.outputType === 'image' ? "Décrivez l'image à générer..." : "Instructions (ex: Résume ces textes...)"}
+          placeholder={element.outputType === 'image' 
+            ? (language === "fr" ? "Décrivez l'image à générer..." : "Describe the image to generate...")
+            : (language === "fr" ? "Instructions (ex: Résume ces textes...)" : "Instructions (e.g.: Summarize these texts...)")
+          }
           className="bg-gray-800 border-gray-700 text-gray-100 text-sm min-h-[100px] resize-none focus-visible:ring-yellow-500/50 placeholder:text-gray-500"
         />
         
@@ -75,12 +80,12 @@ export function PromptCard({ element, onUpdate, onRun }: PromptCardProps) {
           {element.isRunning ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Traitement...
+              {language === "fr" ? "Traitement..." : "Processing..."}
             </>
           ) : (
             <>
               <Play className="w-4 h-4 mr-2 fill-current" />
-              Exécuter
+              {language === "fr" ? "Exécuter" : "Run"}
             </>
           )}
         </Button>

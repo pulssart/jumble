@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import Draggable from "react-draggable"
 import { CanvasElement } from "@/types/canvas"
+import { useLanguage } from "@/lib/language"
 import { ImageCard } from "./elements/ImageCard"
 import { TextCard } from "./elements/TextCard"
 import { TaskCard } from "./elements/TaskCard"
@@ -79,6 +80,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   onFocusElement,
   scale,
 }: CanvasElementProps) {
+  const { language } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [currentPos, setCurrentPos] = useState(element.position)
@@ -340,7 +342,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
               {/* Port de sortie (droite) - Sur tous les éléments */}
               <div 
                 className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-gray-400 rounded-full cursor-crosshair hover:border-blue-500 hover:scale-125 hover:bg-blue-50 transition-all z-50 opacity-0 group-hover:opacity-100 shadow-sm"
-                title="Tirer un câble"
+                title={language === "fr" ? "Tirer un câble" : "Start a cable"}
                 onMouseDown={(e) => {
                   e.stopPropagation()
                   e.preventDefault() // Empêche la sélection texte
@@ -356,7 +358,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
                     ? 'bg-yellow-400 border-gray-600 opacity-100' // Toujours visible pour Prompt
                     : 'bg-white border-gray-400 hover:border-blue-500 hover:bg-blue-50' 
                 }`}
-                title="Connecter une entrée"
+                title={language === "fr" ? "Connecter une entrée" : "Connect an input"}
                 onMouseUp={(e) => {
                   e.stopPropagation()
                   onConnectEnd(element.id)
@@ -369,7 +371,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
               <>
                 <ContextMenuItem onClick={onOrganizeSelection}>
                   <Wand2 className="mr-2 h-4 w-4" />
-                  Organiser la pile
+                  {language === "fr" ? "Organiser la pile" : "Organize stack"}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem 
@@ -377,18 +379,18 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
                   onClick={onDeleteSelection}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Supprimer la sélection ({selectionCount})
+                  {language === "fr" ? `Supprimer la sélection (${selectionCount})` : `Delete selection (${selectionCount})`}
                 </ContextMenuItem>
               </>
             ) : (
               <>
                 <ContextMenuItem onClick={() => onFocusElement?.(element.id)}>
-                  Focus sur cette carte
+                  {language === "fr" ? "Focus sur cette carte" : "Focus on this card"}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem onClick={handleCopy}>
                   <Copy className="mr-2 h-4 w-4" />
-                  Copier l'URL/Contenu
+                  {language === "fr" ? "Copier l'URL/Contenu" : "Copy URL/Content"}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem 
@@ -396,7 +398,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
                   onClick={() => onDelete(element.id)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Supprimer
+                  {language === "fr" ? "Supprimer" : "Delete"}
                 </ContextMenuItem>
               </>
             )}

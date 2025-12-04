@@ -1,7 +1,10 @@
+"use client"
+
 import React, { useState, useRef, useEffect } from "react"
 import { YoutubeElement } from "@/types/canvas"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useLanguage } from "@/lib/language"
 
 interface YoutubeCardProps {
   element: YoutubeElement
@@ -22,6 +25,7 @@ function extractVideoId(url: string): string | null {
 }
 
 export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
+  const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(!element.videoId)
   const [inputValue, setInputValue] = useState("")
   const [isInteractive, setIsInteractive] = useState(false)
@@ -88,7 +92,7 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
       <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
-          placeholder="URL YouTube ou ID vidéo"
+          placeholder={language === "fr" ? "URL YouTube ou ID vidéo" : "YouTube URL or video ID"}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
@@ -99,14 +103,14 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
         />
         <div className="flex gap-2">
           <Button onClick={handleSubmit} size="sm">
-            Valider
+            {language === "fr" ? "Valider" : "Validate"}
           </Button>
           <Button
             onClick={() => setIsEditing(false)}
             variant="outline"
             size="sm"
           >
-            Annuler
+            {language === "fr" ? "Annuler" : "Cancel"}
           </Button>
         </div>
       </div>
@@ -145,13 +149,13 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
         {!isInteractive && (
           <>
             {/* Zone Drag Gauche */}
-            <div className="drag-handle absolute left-0 top-0 bottom-0 w-[40%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title="Déplacer" />
+            <div className="drag-handle absolute left-0 top-0 bottom-0 w-[40%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title={language === "fr" ? "Déplacer" : "Move"} />
             {/* Zone Drag Droite */}
-            <div className="drag-handle absolute right-0 top-0 bottom-0 w-[40%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title="Déplacer" />
+            <div className="drag-handle absolute right-0 top-0 bottom-0 w-[40%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title={language === "fr" ? "Déplacer" : "Move"} />
             {/* Zone Drag Haut */}
-            <div className="drag-handle absolute left-[40%] right-[40%] top-0 h-[30%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title="Déplacer" />
+            <div className="drag-handle absolute left-[40%] right-[40%] top-0 h-[30%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title={language === "fr" ? "Déplacer" : "Move"} />
             {/* Zone Drag Bas */}
-            <div className="drag-handle absolute left-[40%] right-[40%] bottom-0 h-[30%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title="Déplacer" />
+            <div className="drag-handle absolute left-[40%] right-[40%] bottom-0 h-[30%] z-10 bg-transparent cursor-grab active:cursor-grabbing" title={language === "fr" ? "Déplacer" : "Move"} />
             
             {/* 
                 Zone Centrale "Trouée" : 

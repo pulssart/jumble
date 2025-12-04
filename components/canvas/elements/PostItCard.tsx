@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { PostItElement } from "@/types/canvas"
 import { GripHorizontal, Sparkles, Loader2, Image as ImageIcon, CheckSquare } from "lucide-react"
+import { useLanguage } from "@/lib/language"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ const colorClasses = {
 }
 
 export function PostItCard({ element, onUpdate, onAIAction }: PostItCardProps) {
+  const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
   const [content, setContent] = useState(element.content)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -97,7 +99,7 @@ export function PostItCard({ element, onUpdate, onAIAction }: PostItCardProps) {
 
   const handleAIActionClick = async (type: 'ideas' | 'tasks' | 'image') => {
     if (!content || content.trim().length < 3) {
-      alert("Écrivez quelque chose avant de lancer l'IA !")
+      alert(language === "fr" ? "Écrivez quelque chose avant de lancer l'IA !" : "Write something before launching AI!")
       return
     }
     
@@ -132,7 +134,7 @@ export function PostItCard({ element, onUpdate, onAIAction }: PostItCardProps) {
           onMouseDown={(e) => e.stopPropagation()}
           className="cursor-text whitespace-pre-wrap text-sm text-gray-800 h-full w-full overflow-y-auto no-scrollbar"
         >
-          {content || "Cliquez pour écrire..."}
+          {content || (language === "fr" ? "Cliquez pour écrire..." : "Click to write...")}
         </div>
       )}
 
@@ -148,7 +150,7 @@ export function PostItCard({ element, onUpdate, onAIAction }: PostItCardProps) {
                 <DropdownMenuTrigger asChild>
                   <button
                     className="p-1.5 rounded-full bg-white/50 hover:bg-white/80 text-purple-600 transition-colors shadow-sm"
-                    title="Générer avec l'IA"
+                    title={language === "fr" ? "Générer avec l'IA" : "Generate with AI"}
                     onMouseDown={(e) => e.stopPropagation()} // Important pour ne pas drag
                   >
                     <Sparkles className="w-4 h-4" />
@@ -157,15 +159,15 @@ export function PostItCard({ element, onUpdate, onAIAction }: PostItCardProps) {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleAIActionClick('ideas')}>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Idées similaires
+                    {language === "fr" ? "Idées similaires" : "Similar ideas"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleAIActionClick('tasks')}>
                     <CheckSquare className="w-4 h-4 mr-2" />
-                    Plan d'action (Tâches)
+                    {language === "fr" ? "Plan d'action (Tâches)" : "Action plan (Tasks)"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleAIActionClick('image')}>
                     <ImageIcon className="w-4 h-4 mr-2" />
-                    Générer une image
+                    {language === "fr" ? "Générer une image" : "Generate an image"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

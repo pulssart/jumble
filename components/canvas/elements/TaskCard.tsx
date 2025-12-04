@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { TaskElement } from "@/types/canvas"
 import { Check, Square } from "lucide-react"
+import { useLanguage } from "@/lib/language"
 
 interface TaskCardProps {
   element: TaskElement
@@ -10,6 +11,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ element, onUpdate }: TaskCardProps) {
+  const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(element.title)
 
@@ -77,7 +79,7 @@ export function TaskCard({ element, onUpdate }: TaskCardProps) {
                 : "text-gray-800"
             }`}
           >
-            {title || "Nouvelle tâche..."}
+            {title || (language === "fr" ? "Nouvelle tâche..." : "New task...")}
           </div>
         )}
       </div>

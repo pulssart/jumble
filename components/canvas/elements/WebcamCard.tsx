@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { WebcamElement } from "@/types/canvas"
 import { Button } from "@/components/ui/button"
 import { Video, VideoOff, Settings, Power, FlipHorizontal } from "lucide-react"
+import { useLanguage } from "@/lib/language"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ interface MediaDevice {
 }
 
 export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
+  const { language } = useLanguage()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [devices, setDevices] = useState<MediaDevice[]>([])
@@ -57,7 +59,7 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
           .filter(device => device.kind === 'videoinput')
           .map(device => ({
             deviceId: device.deviceId,
-            label: device.label || `Caméra ${device.deviceId.substring(0, 8)}`,
+            label: device.label || (language === "fr" ? `Caméra ${device.deviceId.substring(0, 8)}` : `Camera ${device.deviceId.substring(0, 8)}`),
             kind: device.kind
           }))
         
@@ -69,7 +71,7 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
         }
       } catch (err) {
         console.error("Erreur lors de la liste des caméras:", err)
-        setError("Impossible d'accéder aux caméras")
+        setError(language === "fr" ? "Impossible d'accéder aux caméras" : "Cannot access cameras")
       }
     }
     
@@ -104,7 +106,7 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
         }
       } catch (err: any) {
         console.error("Erreur lors du démarrage de la caméra:", err)
-        setError(err.message || "Impossible de démarrer la caméra")
+        setError(err.message || (language === "fr" ? "Impossible de démarrer la caméra" : "Cannot start camera"))
         setIsActive(false)
         setIsLoading(false)
         onUpdate({ ...element, isActive: false })
@@ -223,7 +225,7 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
             <div className="text-white text-sm flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Chargement...</span>
+              <span>{language === "fr" ? "Chargement..." : "Loading..."}</span>
             </div>
           </div>
         )}
@@ -241,7 +243,7 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
             <div className="text-gray-400 text-sm text-center">
               <VideoOff className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Caméra inactive</p>
+              <p>{language === "fr" ? "Caméra inactive" : "Camera inactive"}</p>
             </div>
           </div>
         )}
@@ -254,18 +256,18 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
           {devices.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
+                  <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2 text-gray-300 hover:text-white hover:bg-gray-700"
                   onMouseDown={(e) => e.stopPropagation()}
                 >
                   <Settings className="w-3.5 h-3.5 mr-1.5" />
-                  <span className="text-xs">Caméra</span>
+                  <span className="text-xs">{language === "fr" ? "Caméra" : "Camera"}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="text-xs">Sélectionner une caméra</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs">{language === "fr" ? "Sélectionner une caméra" : "Select a camera"}</DropdownMenuLabel>
                 {devices.map((device) => (
                   <DropdownMenuItem
                     key={device.deviceId}
@@ -284,7 +286,7 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
           )}
 
           {devices.length === 0 && !error && (
-            <span className="text-xs text-gray-500 px-2">Aucune caméra détectée</span>
+            <span className="text-xs text-gray-500 px-2">{language === "fr" ? "Aucune caméra détectée" : "No camera detected"}</span>
           )}
         </div>
 
@@ -303,10 +305,10 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
               onUpdate({ ...element, mirrored: !element.mirrored })
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            title="Miroir horizontal"
+            title={language === "fr" ? "Miroir horizontal" : "Horizontal mirror"}
           >
             <FlipHorizontal className="w-3.5 h-3.5 mr-1.5" />
-            <span className="text-xs">Miroir</span>
+            <span className="text-xs">{language === "fr" ? "Miroir" : "Mirror"}</span>
           </Button>
 
           {/* Bouton on/off */}
@@ -327,12 +329,12 @@ export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
           {isActive ? (
             <>
               <Power className="w-3.5 h-3.5 mr-1.5" />
-              <span className="text-xs">Arrêter</span>
+              <span className="text-xs">{language === "fr" ? "Arrêter" : "Stop"}</span>
             </>
           ) : (
             <>
               <Video className="w-3.5 h-3.5 mr-1.5" />
-              <span className="text-xs">Démarrer</span>
+              <span className="text-xs">{language === "fr" ? "Démarrer" : "Start"}</span>
             </>
           )}
         </Button>

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { TextElement } from "@/types/canvas"
+import { useLanguage } from "@/lib/language"
 
 interface TextCardProps {
   element: TextElement
@@ -9,6 +10,7 @@ interface TextCardProps {
 }
 
 export function TextCard({ element, onUpdate }: TextCardProps) {
+  const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
   const [content, setContent] = useState(element.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -60,7 +62,7 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
           onMouseDown={(e) => e.stopPropagation()}
           className="cursor-text whitespace-pre-wrap text-sm text-gray-800"
         >
-          {content || "Cliquez pour éditer..."}
+          {content || (language === "fr" ? "Cliquez pour éditer..." : "Click to edit...")}
         </div>
       )}
     </div>

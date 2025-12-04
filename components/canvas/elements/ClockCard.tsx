@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { ClockElement } from "@/types/canvas"
 import { Settings, Clock as ClockIcon, Globe, ToggleLeft, ToggleRight } from "lucide-react"
+import { useLanguage } from "@/lib/language"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -35,6 +36,7 @@ const COMMON_TIMEZONES = [
 ]
 
 export function ClockCard({ element, onUpdate }: ClockCardProps) {
+  const { language } = useLanguage()
   const [time, setTime] = useState(new Date())
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
@@ -105,11 +107,11 @@ export function ClockCard({ element, onUpdate }: ClockCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Configuration de l'horloge</DropdownMenuLabel>
+            <DropdownMenuLabel>{language === "fr" ? "Configuration de l'horloge" : "Clock settings"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             
             <div className="p-2">
-                <label className="text-xs text-gray-500 mb-1 block">Label personnalisé</label>
+                <label className="text-xs text-gray-500 mb-1 block">{language === "fr" ? "Label personnalisé" : "Custom label"}</label>
                 <Input 
                     value={element.label || ""} 
                     onChange={(e) => onUpdate({ ...element, label: e.target.value })}
@@ -121,7 +123,7 @@ export function ClockCard({ element, onUpdate }: ClockCardProps) {
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Globe className="w-4 h-4 mr-2" />
-                <span>Fuseau horaire</span>
+                <span>{language === "fr" ? "Fuseau horaire" : "Time zone"}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
                 {COMMON_TIMEZONES.map((tz) => (
@@ -141,18 +143,24 @@ export function ClockCard({ element, onUpdate }: ClockCardProps) {
             
             <DropdownMenuItem onClick={() => onUpdate({ ...element, isAnalog: !element.isAnalog })}>
               <ClockIcon className="w-4 h-4 mr-2" />
-              <span>{element.isAnalog ? "Passer en digital" : "Passer en analogique"}</span>
+              <span>{element.isAnalog 
+                ? (language === "fr" ? "Passer en digital" : "Switch to digital")
+                : (language === "fr" ? "Passer en analogique" : "Switch to analog")
+              }</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem onClick={() => onUpdate({ ...element, showSeconds: !element.showSeconds })}>
               {element.showSeconds ? <ToggleRight className="w-4 h-4 mr-2 text-green-500" /> : <ToggleLeft className="w-4 h-4 mr-2 text-gray-400" />}
-              <span>Afficher les secondes</span>
+              <span>{language === "fr" ? "Afficher les secondes" : "Show seconds"}</span>
             </DropdownMenuItem>
 
             {!element.isAnalog && (
                 <DropdownMenuItem onClick={() => onUpdate({ ...element, is24Hour: !element.is24Hour })}>
                   <span className="text-xs font-bold border border-gray-400 rounded px-1 mr-2">24h</span>
-                  <span>{element.is24Hour ? "Format 12h (AM/PM)" : "Format 24h"}</span>
+                  <span>{element.is24Hour 
+                    ? (language === "fr" ? "Format 12h (AM/PM)" : "12h format (AM/PM)")
+                    : (language === "fr" ? "Format 24h" : "24h format")
+                  }</span>
                 </DropdownMenuItem>
             )}
           </DropdownMenuContent>
