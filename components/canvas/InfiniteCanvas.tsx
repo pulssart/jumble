@@ -11,7 +11,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   getSpaces, createSpace, updateSpace, setCurrentSpaceId, initSpaces, deleteSpace
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2 } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -605,6 +605,7 @@ export function InfiniteCanvas() {
       ...(type === "linear" && { embedUrl: "" }),
       ...(type === "linkedin" && { embedUrl: "" }),
       ...(type === "twitter" && { tweetId: "" }),
+      ...(type === "instagram" && { shortcode: "", embedUrl: "" }),
       ...(type === "link" && { url: "" }),
       ...(type === "prompt" && { content: "" }),
       ...(type === "webcam" && { isActive: false }),
@@ -716,6 +717,37 @@ export function InfiniteCanvas() {
             position: basePosition,
             zIndex: getNextZIndex(),
             tweetId: tweetId,
+          }
+        }
+      }
+      else if (url.includes("instagram.com")) {
+        // Extraire le shortcode (post, reel, tv)
+        const patterns = [
+          /instagram\.com\/p\/([a-zA-Z0-9_-]+)/,
+          /instagram\.com\/reel\/([a-zA-Z0-9_-]+)/,
+          /instagram\.com\/tv\/([a-zA-Z0-9_-]+)/,
+        ]
+        let shortcode: string | null = null
+        for (const pattern of patterns) {
+          const match = url.match(pattern)
+          if (match) {
+            shortcode = match[1]
+            break
+          }
+        }
+        if (shortcode) {
+          const embedUrl = url.includes("/reel/") 
+            ? `https://www.instagram.com/reel/${shortcode}/embed/`
+            : url.includes("/tv/")
+            ? `https://www.instagram.com/tv/${shortcode}/embed/`
+            : `https://www.instagram.com/p/${shortcode}/embed/`
+          newElement = {
+            id: generateId(),
+            type: "instagram",
+            position: basePosition,
+            zIndex: getNextZIndex(),
+            shortcode: shortcode,
+            embedUrl: embedUrl,
           }
         }
       }
@@ -2060,6 +2092,10 @@ export function InfiniteCanvas() {
             <DropdownMenuItem onClick={() => addElement("twitter")}>
               <Twitter className="h-4 w-4 mr-2" />
               X (Twitter)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addElement("instagram")}>
+              <Instagram className="h-4 w-4 mr-2" />
+              Instagram
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("link")}>
               <LinkIcon className="h-4 w-4 mr-2" />

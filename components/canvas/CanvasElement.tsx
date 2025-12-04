@@ -21,6 +21,7 @@ import { WebcamCard } from "./elements/WebcamCard"
 import { GifCard } from "./elements/GifCard"
 import { ClockCard } from "./elements/ClockCard"
 import { AppleMusicCard } from "./elements/AppleMusicCard"
+import { InstagramCard } from "./elements/InstagramCard"
 import { X, Copy, Trash2, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -251,6 +252,8 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
         return <ClockCard element={element} onUpdate={onUpdate} />
       case "applemusic":
         return <AppleMusicCard element={element} onUpdate={onUpdate} />
+      case "instagram":
+        return <InstagramCard element={element} onUpdate={onUpdate} />
       default:
         return null
     }
@@ -270,6 +273,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
       case "linkedin": textToCopy = (element as any).embedUrl || ""; break;
       case "spotify": textToCopy = element.spotifyUri || ""; break;
       case "applemusic": textToCopy = (element as any).url || ""; break;
+      case "instagram": textToCopy = (element as any).embedUrl || `https://www.instagram.com/p/${(element as any).shortcode}/`; break;
       case "text": textToCopy = element.content || ""; break;
       case "postit": textToCopy = element.content || ""; break;
       case "task": textToCopy = (element as any).title || ""; break;

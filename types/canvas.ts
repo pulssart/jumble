@@ -1,4 +1,4 @@
-export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic"
+export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic" | "instagram"
 
 export interface Position {
   x: number
@@ -125,8 +125,14 @@ export interface ClockElement extends BaseElement {
 
 export interface AppleMusicElement extends BaseElement {
   type: "applemusic"
-  url: string // URL Apple Music d’origine
+  url: string // URL Apple Music d'origine
   title?: string
+}
+
+export interface InstagramElement extends BaseElement {
+  type: "instagram"
+  shortcode: string // Ex: "DRu_DUkiCSj" pour un reel ou "ABC123" pour un post
+  embedUrl?: string // URL complète d'embed
 }
 
 export type CanvasElement =
@@ -147,6 +153,7 @@ export type CanvasElement =
   | GifElement
   | ClockElement
   | AppleMusicElement
+  | InstagramElement
 
 export interface Space {
   id: string
