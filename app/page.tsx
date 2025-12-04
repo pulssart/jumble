@@ -2,6 +2,7 @@
 
 import { InfiniteCanvas } from "@/components/canvas/InfiniteCanvas"
 import { OnboardingDialog } from "@/components/OnboardingDialog"
+import { UpdateModal } from "@/components/UpdateModal"
 import { LanguageProvider } from "@/lib/language"
 
 export default function Home() {
@@ -9,6 +10,7 @@ export default function Home() {
     <LanguageProvider>
       <InfiniteCanvas />
       <OnboardingDialog />
+      <UpdateModal />
     </LanguageProvider>
   )
 }
