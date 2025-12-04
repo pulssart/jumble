@@ -9,9 +9,9 @@ import {
   saveCanvasOffset, loadCanvasOffset, 
   saveCanvasZoom, loadCanvasZoom, 
   saveCanvasBgColor, loadCanvasBgColor,
-  getSpaces, createSpace, updateSpace, setCurrentSpaceId, initSpaces
+  getSpaces, createSpace, updateSpace, setCurrentSpaceId, initSpaces, deleteSpace
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,8 @@ export function InfiniteCanvas() {
   const [currentSpaceId, setCurrentSpaceIdState] = useState<string | null>(null)
   const [isSpaceRenameDialogOpen, setIsSpaceRenameDialogOpen] = useState(false)
   const [newSpaceName, setNewSpaceName] = useState("")
+  const [isDeleteSpaceDialogOpen, setIsDeleteSpaceDialogOpen] = useState(false)
+  const [spaceToDelete, setSpaceToDelete] = useState<Space | null>(null)
 
   // Canvas State
   const [elements, setElements] = useState<CanvasElement[]>([])
@@ -146,6 +148,37 @@ export function InfiniteCanvas() {
         setNewSpaceName(current.name)
         setIsSpaceRenameDialogOpen(true)
     }
+  }
+
+  const handleConfirmDeleteSpace = async () => {
+    if (!spaceToDelete) return
+
+    const deletingId = spaceToDelete.id
+    const isDeletingCurrent = currentSpaceId === deletingId
+
+    // Supprimer le space (métadonnées + données associées)
+    deleteSpace(deletingId)
+
+    // Recharger la liste des spaces depuis le stockage
+    const updatedSpaces = getSpaces()
+    setSpaces(updatedSpaces)
+
+    // Fermer la modale
+    setIsDeleteSpaceDialogOpen(false)
+    setSpaceToDelete(null)
+
+    // Si on ne supprime pas l'espace courant, rien d'autre à faire
+    if (!isDeletingCurrent) return
+
+    // Si plus aucun space, on nettoie l'état local
+    if (updatedSpaces.length === 0) {
+      setCurrentSpaceIdState(null)
+      return
+    }
+
+    // Sinon, basculer sur le premier space restant sans tenter de sauvegarder l'ancien (déjà supprimé)
+    setCurrentSpaceIdState(null)
+    await handleSwitchSpace(updatedSpaces[0].id)
   }
 
   // Sauvegarder la clé OpenAI quand elle change
@@ -1926,16 +1959,33 @@ export function InfiniteCanvas() {
           <DropdownMenuContent align="start" className="w-64">
             <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase">Mes Jumbles</DropdownMenuLabel>
             {spaces.map(space => (
-                <DropdownMenuItem 
-                    key={space.id} 
-                    onClick={() => handleSwitchSpace(space.id)}
-                    className="flex items-center justify-between group"
-                >
-                    <span className={space.id === currentSpaceId ? "font-medium" : ""}>
-                        {space.name}
-                    </span>
-                    {space.id === currentSpaceId && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                </DropdownMenuItem>
+              <DropdownMenuItem 
+                key={space.id} 
+                onClick={() => handleSwitchSpace(space.id)}
+                className="flex items-center justify-between group"
+              >
+                <span className={space.id === currentSpaceId ? "font-medium" : ""}>
+                  {space.name}
+                </span>
+                <div className="flex items-center gap-1">
+                  {space.id === currentSpaceId && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  )}
+                  {spaces.length > 1 && (
+                    <button
+                      type="button"
+                      className="ml-1 rounded-full p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSpaceToDelete(space)
+                        setIsDeleteSpaceDialogOpen(true)
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleCreateSpace}>
@@ -2322,6 +2372,27 @@ export function InfiniteCanvas() {
               </Button>
               <Button onClick={handleRenameSpace}>
                 Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog Delete Space */}
+        <Dialog open={isDeleteSpaceDialogOpen} onOpenChange={setIsDeleteSpaceDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Supprimer ce Jumble ?</DialogTitle>
+              <DialogDescription>
+                Vous allez supprimer définitivement <span className="font-semibold">{spaceToDelete?.name}</span> et tous
+                les éléments qu’il contient. Cette action est irréversible.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteSpaceDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmDeleteSpace}>
+                Supprimer
               </Button>
             </DialogFooter>
           </DialogContent>
