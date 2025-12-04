@@ -31,6 +31,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import Logo from "../../logo.png"
 
 export function InfiniteCanvas() {
   // Space State
@@ -1901,8 +1902,16 @@ export function InfiniteCanvas() {
       </div>
 
       {/* Top Bar Minimaliste */}
-      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 p-1.5 bg-white/80 backdrop-blur-md border border-gray-200/50 rounded-full shadow-xl transition-all hover:shadow-2xl hover:bg-white/90">
-        
+      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 px-2 py-2 bg-white/80 backdrop-blur-md border border-gray-200/50 rounded-full shadow-xl transition-all hover:shadow-2xl hover:bg-white/90">
+        {/* Logo */}
+        <div className="flex items-center gap-2 pl-2 pr-4 min-w-[120px] border-r border-gray-200/60">
+          <img
+            src={Logo.src}
+            alt="Jumble"
+            className="h-6 w-auto object-contain"
+          />
+        </div>
+
         {/* Space Switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
