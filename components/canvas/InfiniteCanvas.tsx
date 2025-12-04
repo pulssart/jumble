@@ -2195,6 +2195,27 @@ export function InfiniteCanvas() {
             
             <div className="py-4 space-y-4">
               <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Onboarding
+                </label>
+                <p className="text-xs text-gray-500">
+                  Rouvrez la présentation de Jumble pour revoir les bases.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-1"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new Event("jumble-open-onboarding"))
+                    }
+                  }}
+                >
+                  Revoir l’onboarding
+                </Button>
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Palette className="h-4 w-4" />
                   Couleur de fond
