@@ -1,4 +1,4 @@
-// Ce script est injecté sur localhost:3001 et sert de pont
+// Ce script est injecté sur https://jumblecanvas.netlify.app et sert de pont
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "ADD_TO_SPACE") {
     console.log("Jumble Bridge: Reçu", request.payload);

@@ -41,7 +41,14 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
   }
 
   return (
-    <div className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[200px] max-w-md`}>
+    <div 
+      className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[200px] max-w-md`}
+      style={{
+        width: element.width || undefined,
+        height: element.height || undefined,
+        transition: isEditing ? 'none' : 'width 0.1s, height 0.1s'
+      }}
+    >
       {isEditing ? (
         <textarea
           ref={textareaRef}
@@ -50,7 +57,7 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full resize-none border-none outline-none focus:ring-0 bg-transparent text-sm"
+          className="w-full h-full resize-none border-none outline-none focus:ring-0 bg-transparent text-sm"
           rows={Math.max(3, content.split("\n").length)}
         />
       ) : (

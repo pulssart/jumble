@@ -11,7 +11,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   getSpaces, createSpace, updateSpace, setCurrentSpaceId, initSpaces, deleteSpace
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -2516,6 +2516,61 @@ export function InfiniteCanvas() {
         onChange={handleImportSpace}
         className="hidden"
       />
+
+      {/* Bouton de rapport de bug */}
+      <a
+        href={`mailto:pulssart@gmail.com?subject=${encodeURIComponent(language === "fr" ? "Rapport de bug - Jumble" : "Bug Report - Jumble")}&body=${encodeURIComponent(language === "fr" ? `Bonjour,
+
+Je souhaite signaler un bug dans Jumble.
+
+Description du bug :
+[Veuillez décrire le bug ici]
+
+Étapes pour reproduire :
+1. 
+2. 
+3. 
+
+Comportement attendu :
+[Ce qui devrait se passer]
+
+Comportement observé :
+[Ce qui se passe réellement]
+
+Informations système :
+- Navigateur : ${typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}
+- URL : ${typeof window !== 'undefined' ? window.location.href : 'N/A'}
+- Date : ${new Date().toLocaleString('fr-FR')}
+
+Merci !` : `Hello,
+
+I would like to report a bug in Jumble.
+
+Bug description:
+[Please describe the bug here]
+
+Steps to reproduce:
+1. 
+2. 
+3. 
+
+Expected behavior:
+[What should happen]
+
+Actual behavior:
+[What actually happens]
+
+System information:
+- Browser: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}
+- URL: ${typeof window !== 'undefined' ? window.location.href : 'N/A'}
+- Date: ${new Date().toLocaleString('en-US')}
+
+Thank you!`)}`}
+        className="fixed bottom-4 right-4 z-50 p-3 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-lg transition-all hover:scale-110"
+        title={language === "fr" ? "Signaler un bug" : "Report a bug"}
+      >
+        <Bug className="h-5 w-5" />
+      </a>
     </div>
   )
 }

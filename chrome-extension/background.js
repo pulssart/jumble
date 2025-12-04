@@ -97,7 +97,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   console.log("Jumble Clipper: Payload ready", payload);
 
   // 2. Trouver l'onglet Jumble
-  const tabs = await chrome.tabs.query({ url: "http://localhost:3001/*" });
+  const tabs = await chrome.tabs.query({ url: "https://jumblecanvas.netlify.app/*" });
   console.log("Jumble Clipper: Found Jumble tabs", tabs);
   
   if (tabs.length === 0) {
@@ -105,7 +105,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: () => alert("Erreur : Veuillez ouvrir Jumble (http://localhost:3001) dans un autre onglet pour utiliser le clipper.")
+        func: () => alert("Erreur : Veuillez ouvrir Jumble (https://jumblecanvas.netlify.app) dans un autre onglet pour utiliser le clipper.")
       });
     } catch (e) {
       console.error("Impossible d'afficher l'alerte (page protégée ?)", e);
@@ -141,7 +141,7 @@ chrome.action.onClicked.addListener(async (tab) => {
       try {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          func: () => alert("Erreur: Veuillez recharger l'onglet Jumble (localhost:3001) et réessayer.")
+          func: () => alert("Erreur: Veuillez recharger l'onglet Jumble (https://jumblecanvas.netlify.app) et réessayer.")
         });
       } catch(e) {}
       return;
