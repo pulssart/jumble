@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { X, Sparkles, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language"
 
 const UPDATE_KEY = "jumble-update-shown-v2"
@@ -116,23 +115,6 @@ export function UpdateModal() {
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4">
-          <Button
-            size="sm"
-            className="flex-1 text-xs font-medium"
-            onClick={handleClose}
-          >
-            {t.cta}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-xs"
-            onClick={handleClose}
-          >
-            {t.dismiss}
-          </Button>
-        </div>
       </div>
     </div>
   )
