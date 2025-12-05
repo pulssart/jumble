@@ -1,18 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { X, Sparkles } from "lucide-react"
+import { X, Sparkles, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language"
 
-const UPDATE_KEY = "jumble-update-shown-v1"
+const UPDATE_KEY = "jumble-update-shown-v2"
 
 const updates = {
   fr: {
-    title: "Nouveauté",
+    title: "Nouveautés",
     instagram: {
       title: "Carte Instagram",
-      description: "Vous pouvez maintenant ajouter des posts, reels et vidéos Instagram directement sur votre canvas !",
+      description: "Ajoutez des posts, reels et vidéos Instagram directement sur votre canvas !",
+    },
+    googlemaps: {
+      title: "Carte Google Maps",
+      description: "Intégrez des cartes Google Maps avec les liens courts (maps.app.goo.gl) ou les URLs d'embed !",
     },
     cta: "Découvrir",
     dismiss: "Fermer",
@@ -21,7 +25,11 @@ const updates = {
     title: "What's New",
     instagram: {
       title: "Instagram Card",
-      description: "You can now add Instagram posts, reels and videos directly to your canvas!",
+      description: "Add Instagram posts, reels and videos directly to your canvas!",
+    },
+    googlemaps: {
+      title: "Google Maps Card",
+      description: "Embed Google Maps with short links (maps.app.goo.gl) or embed URLs!",
     },
     cta: "Discover",
     dismiss: "Close",
@@ -94,6 +102,16 @@ export function UpdateModal() {
             <div className="flex-1">
               <h4 className="font-medium text-gray-900 mb-1">{t.instagram.title}</h4>
               <p className="text-sm text-gray-600 leading-relaxed">{t.instagram.description}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-100 to-green-100 rounded-lg flex-shrink-0">
+              <MapPin className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium text-gray-900 mb-1">{t.googlemaps.title}</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">{t.googlemaps.description}</p>
             </div>
           </div>
         </div>
