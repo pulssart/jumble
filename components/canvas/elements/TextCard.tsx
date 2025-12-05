@@ -13,9 +13,10 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
   const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
   const [content, setContent] = useState(element.content)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isResizing, setIsResizing] = useState(false)
+  const isInitializedRef = useRef(false)
 
   // Dimensions locales pour la fluidité
   const [dimensions, setDimensions] = useState({
@@ -28,30 +29,70 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
     if (element.width && element.height && !isResizing) {
       setDimensions({ width: element.width, height: element.height })
     }
-  }, [element.width, element.height, isResizing])
+    // Mettre à jour le contenu si l'élément change depuis l'extérieur
+    if (element.content !== content && !isEditing) {
+      setContent(element.content)
+    }
+  }, [element.width, element.height, element.content, isResizing, isEditing])
 
   useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus()
-      textareaRef.current.select()
+    if (isEditing && editorRef.current) {
+      // Initialiser le contenu HTML seulement la première fois qu'on passe en mode édition
+      if (!isInitializedRef.current) {
+        editorRef.current.innerHTML = content || ""
+        isInitializedRef.current = true
+        
+        editorRef.current.focus()
+        // Sélectionner tout le contenu au début de l'édition
+        const range = document.createRange()
+        range.selectNodeContents(editorRef.current)
+        const selection = window.getSelection()
+        selection?.removeAllRanges()
+        selection?.addRange(range)
+      } else {
+        editorRef.current.focus()
+      }
+    } else {
+      // Réinitialiser le flag quand on sort du mode édition
+      isInitializedRef.current = false
     }
-  }, [isEditing])
+  }, [isEditing, content])
 
   const handleBlur = () => {
     setIsEditing(false)
+    // Récupérer le contenu HTML de l'éditeur
+    const htmlContent = editorRef.current?.innerHTML || ""
+    setContent(htmlContent)
     onUpdate({
       ...element,
-      content,
+      content: htmlContent,
     })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Cmd+B ou Ctrl+B pour mettre en gras
+    if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      // Utiliser document.execCommand pour appliquer le formatage en gras
+      document.execCommand("bold", false)
+      return
+    }
+    
     if (e.key === "Enter" && e.ctrlKey) {
       handleBlur()
     }
     if (e.key === "Escape") {
       setContent(element.content)
       setIsEditing(false)
+    }
+  }
+
+  const handleInput = () => {
+    // Mettre à jour le contenu à chaque changement
+    if (editorRef.current) {
+      setContent(editorRef.current.innerHTML)
     }
   }
 
@@ -136,15 +177,16 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
       }}
     >
       {isEditing ? (
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
+        <div
+          ref={editorRef}
+          contentEditable
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
+          onInput={handleInput}
           onMouseDown={(e) => e.stopPropagation()}
-          className="w-full h-full resize-none border-none outline-none focus:ring-0 bg-transparent text-sm"
+          className="w-full h-full resize-none border-none outline-none focus:ring-0 bg-transparent text-sm text-gray-800"
           style={{ minHeight: '100%' }}
+          suppressContentEditableWarning
         />
       ) : (
         <div
@@ -153,10 +195,9 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
             setIsEditing(true)
           }}
           onMouseDown={(e) => e.stopPropagation()}
-          className="cursor-text whitespace-pre-wrap text-sm text-gray-800 h-full overflow-auto"
-        >
-          {content || (language === "fr" ? "Cliquez pour éditer..." : "Click to edit...")}
-        </div>
+          className="cursor-text text-sm text-gray-800 h-full overflow-auto"
+          dangerouslySetInnerHTML={{ __html: content || (language === "fr" ? "Cliquez pour éditer..." : "Click to edit...") }}
+        />
       )}
 
       {/* Poignée de redimensionnement */}
