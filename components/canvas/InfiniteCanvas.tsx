@@ -466,7 +466,7 @@ export function InfiniteCanvas() {
     })
   }
 
-  const generateId = () => `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const generateId = () => crypto.randomUUID()
 
   const getNextZIndex = () => {
     if (elementsRef.current.length === 0) return 1

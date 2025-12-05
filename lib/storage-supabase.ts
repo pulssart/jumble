@@ -298,11 +298,28 @@ export async function loadCanvasBgColor(
 
 // --- Elements Management ---
 
+// Fonction pour valider et convertir un ID en UUID valide
+function ensureValidUUID(id: string): string {
+  // Vérifier si c'est déjà un UUID valide (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (uuidRegex.test(id)) {
+    return id
+  }
+  // Si ce n'est pas un UUID valide, en générer un nouveau
+  console.warn(`ID invalide détecté: ${id}, génération d'un nouvel UUID`)
+  return crypto.randomUUID()
+}
+
 function elementToRow(element: CanvasElement, spaceId: string, userId: string): ElementRow {
   const { id, type, position, width, height, zIndex, parentId, connections, ...rest } = element
 
+  // S'assurer que l'ID est un UUID valide
+  const validId = ensureValidUUID(id)
+  const validParentId = parentId ? ensureValidUUID(parentId) : null
+  const validConnections = connections?.map(connId => ensureValidUUID(connId)) || []
+
   return {
-    id,
+    id: validId,
     space_id: spaceId,
     user_id: userId,
     type,
@@ -310,8 +327,8 @@ function elementToRow(element: CanvasElement, spaceId: string, userId: string): 
     width,
     height,
     z_index: zIndex,
-    parent_id: parentId || null,
-    connections: connections || [],
+    parent_id: validParentId,
+    connections: validConnections,
     data: rest, // Toutes les autres propriétés spécifiques au type
   }
 }
@@ -345,8 +362,30 @@ export async function saveElements(
 
     if (elements.length === 0) return
 
-    // Insérer tous les nouveaux éléments
-    const rows = elements.map((el) => elementToRow(el, spaceId, userId))
+    // Créer un mapping des anciens IDs vers les nouveaux UUIDs valides
+    const idMapping = new Map<string, string>()
+    elements.forEach(el => {
+      const validId = ensureValidUUID(el.id)
+      if (validId !== el.id) {
+        idMapping.set(el.id, validId)
+      } else {
+        idMapping.set(el.id, el.id)
+      }
+    })
+
+    // Mettre à jour les éléments avec les nouveaux IDs et références
+    const updatedElements = elements.map(el => {
+      const newId = idMapping.get(el.id)!
+      return {
+        ...el,
+        id: newId,
+        parentId: el.parentId ? idMapping.get(el.parentId) || null : null,
+        connections: el.connections?.map(connId => idMapping.get(connId) || connId) || []
+      }
+    })
+
+    // Insérer tous les éléments avec des IDs valides
+    const rows = updatedElements.map((el) => elementToRow(el, spaceId, userId))
 
     const { error } = await supabase.from("elements").insert(rows)
 
