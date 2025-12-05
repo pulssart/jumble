@@ -8,11 +8,12 @@ import {
   saveBackup, loadBackup
 } from "@/lib/storage-supabase-simple"
 import { 
-  getSpaces as getLocalSpaces, createSpace as createLocalSpace, 
-  saveElements as saveLocalElements, loadElements as loadLocalElements,
-  saveCanvasOffset as saveLocalOffset, loadCanvasOffset as loadLocalOffset,
-  saveCanvasZoom as saveLocalZoom, loadCanvasZoom as loadLocalZoom,
-  saveCanvasBgColor as saveLocalBgColor, loadCanvasBgColor as loadLocalBgColor,
+  getSpaces, createSpace, updateSpace, deleteSpace, initSpaces,
+  saveElements, loadElements,
+  saveCanvasOffset, loadCanvasOffset,
+  saveCanvasZoom, loadCanvasZoom,
+  saveCanvasBgColor, loadCanvasBgColor,
+  setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
 import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut } from "lucide-react"
 import {
@@ -79,7 +80,7 @@ export function InfiniteCanvas() {
   const selectionStartRef = useRef<{ x: number, y: number } | null>(null)
   const isSelecting = useRef(false)
 
-  // Fonction pour générer le payload de backup
+  // Fonction pour générer le payload de backup (tout depuis le stockage local)
   const generateBackupPayload = async (): Promise<{
     spaces: Space[]
     currentSpaceId: string | null
@@ -92,21 +93,21 @@ export function InfiniteCanvas() {
   }> => {
     // Sauvegarder d'abord l'état actuel du space courant
     if (currentSpaceId) {
-      await saveLocalElements(currentSpaceId, elements)
-      saveLocalOffset(currentSpaceId, canvasOffset)
-      saveLocalZoom(currentSpaceId, scale)
-      saveLocalBgColor(currentSpaceId, bgColor)
+      await saveElements(currentSpaceId, elements)
+      saveCanvasOffset(currentSpaceId, canvasOffset)
+      saveCanvasZoom(currentSpaceId, scale)
+      saveCanvasBgColor(currentSpaceId, bgColor)
     }
 
-    const allSpaces = getLocalSpaces()
+    const allSpaces = getSpaces()
     const dataBySpace: Record<string, any> = {}
 
     for (const space of allSpaces) {
       const spaceId = space.id
-      const spaceElements = await loadLocalElements(spaceId)
-      const spaceOffset = loadLocalOffset(spaceId)
-      const spaceZoom = loadLocalZoom(spaceId)
-      const spaceBg = loadLocalBgColor(spaceId)
+      const spaceElements = await loadElements(spaceId)
+      const spaceOffset = loadCanvasOffset(spaceId)
+      const spaceZoom = loadCanvasZoom(spaceId)
+      const spaceBg = loadCanvasBgColor(spaceId)
 
       dataBySpace[spaceId] = {
         elements: spaceElements,
@@ -148,44 +149,75 @@ export function InfiniteCanvas() {
         const backup = await loadBackup(user.id)
         
         if (backup) {
-          console.log("Backup trouvé, chargement des données...")
-          // Restaurer les spaces
-          setSpaces(backup.spaces)
+          console.log("Backup trouvé, restauration depuis Supabase...")
           
-          // Restaurer les données de chaque space
+          // Nettoyer complètement le stockage local pour éviter les conflits
+          try {
+            // Nettoyer localStorage
+            localStorage.removeItem("spaces-list")
+            localStorage.removeItem("current-space-id")
+            // Nettoyer IndexedDB
+            if (typeof indexedDB !== 'undefined') {
+              const deleteRequest = indexedDB.deleteDatabase('SpaceCanvasDB')
+              deleteRequest.onerror = () => {}
+              deleteRequest.onsuccess = () => {}
+            }
+          } catch (e) {
+            console.warn("Erreur nettoyage stockage:", e)
+          }
+          
+          // Restaurer les spaces dans le stockage local
+          const { saveSpaces } = await import("@/lib/storage")
+          saveSpaces(backup.spaces)
+          
+          // Restaurer les données de chaque space dans le stockage local
           for (const space of backup.spaces) {
             const spaceData = backup.dataBySpace[space.id]
             if (spaceData) {
-              await saveLocalElements(space.id, spaceData.elements)
-              saveLocalOffset(space.id, spaceData.canvasOffset)
-              saveLocalZoom(space.id, spaceData.scale)
-              saveLocalBgColor(space.id, spaceData.bgColor)
+              await saveElements(space.id, spaceData.elements)
+              saveCanvasOffset(space.id, spaceData.canvasOffset)
+              saveCanvasZoom(space.id, spaceData.scale)
+              saveCanvasBgColor(space.id, spaceData.bgColor)
             }
           }
           
+          // Mettre à jour l'état React
+          setSpaces(backup.spaces)
+          
           // Charger le space actif
-          if (backup.currentSpaceId) {
-            setCurrentSpaceIdState(backup.currentSpaceId)
-            await loadSpaceData(backup.currentSpaceId)
-          } else if (backup.spaces.length > 0) {
-            setCurrentSpaceIdState(backup.spaces[0].id)
-            await loadSpaceData(backup.spaces[0].id)
+          const activeSpaceId = backup.currentSpaceId || (backup.spaces.length > 0 ? backup.spaces[0].id : null)
+          if (activeSpaceId) {
+            setCurrentSpaceIdState(activeSpaceId)
+            setCurrentSpaceId(activeSpaceId)
+            await loadSpaceData(activeSpaceId)
           }
         } else {
-          console.log("Aucun backup trouvé, initialisation locale...")
-          // Initialiser avec les données locales
-          const localSpaces = getLocalSpaces()
-          if (localSpaces.length === 0) {
-            const defaultSpace = createLocalSpace("Mon Espace")
-            setSpaces([defaultSpace])
-            setCurrentSpaceIdState(defaultSpace.id)
-            await loadSpaceData(defaultSpace.id)
-          } else {
-            setSpaces(localSpaces)
-            const currentId = localStorage.getItem("current-space-id") || localSpaces[0].id
-            setCurrentSpaceIdState(currentId)
-            await loadSpaceData(currentId)
+          console.log("Aucun backup trouvé, création d'un compte vide...")
+          
+          // Pour un nouveau compte, nettoyer complètement le stockage local
+          try {
+            localStorage.removeItem("spaces-list")
+            localStorage.removeItem("current-space-id")
+            if (typeof indexedDB !== 'undefined') {
+              const deleteRequest = indexedDB.deleteDatabase('SpaceCanvasDB')
+              deleteRequest.onerror = () => {}
+              deleteRequest.onsuccess = () => {}
+            }
+          } catch (e) {
+            console.warn("Erreur nettoyage stockage:", e)
           }
+          
+          // Initialiser avec un space vide
+          const defaultSpace = await initSpaces()
+          const allSpaces = getSpaces()
+          setSpaces(allSpaces)
+          setCurrentSpaceIdState(defaultSpace.id)
+          await loadSpaceData(defaultSpace.id)
+          
+          // Sauvegarder immédiatement le backup initial (vide)
+          const initialPayload = await generateBackupPayload()
+          await saveBackup(user.id, initialPayload.spaces, initialPayload.currentSpaceId, initialPayload.dataBySpace)
+          console.log("Backup initial créé pour le nouveau compte")
         }
         
         const savedKey = localStorage.getItem("space_openai_key")
@@ -204,10 +236,10 @@ export function InfiniteCanvas() {
   const loadSpaceData = async (spaceId: string) => {
     setIsElementsLoaded(false)
     try {
-      const loadedElements = await loadLocalElements(spaceId)
-      const loadedOffset = loadLocalOffset(spaceId)
-      const loadedZoom = loadLocalZoom(spaceId)
-      const loadedBgColor = loadLocalBgColor(spaceId)
+      const loadedElements = await loadElements(spaceId)
+      const loadedOffset = loadCanvasOffset(spaceId)
+      const loadedZoom = loadCanvasZoom(spaceId)
+      const loadedBgColor = loadCanvasBgColor(spaceId)
 
       setElements(loadedElements)
       setCanvasOffset(loadedOffset)
@@ -232,16 +264,16 @@ export function InfiniteCanvas() {
     isSwitchingRef.current = true
     
     try {
-      // Sauvegarder l'état actuel avant de changer (sécurité)
+      // Sauvegarder l'état actuel avant de changer
       if (currentSpaceId) {
-          await saveLocalElements(currentSpaceId, elements)
-          saveLocalOffset(currentSpaceId, canvasOffset)
-          saveLocalZoom(currentSpaceId, scale)
-          saveLocalBgColor(currentSpaceId, bgColor)
+          await saveElements(currentSpaceId, elements)
+          saveCanvasOffset(currentSpaceId, canvasOffset)
+          saveCanvasZoom(currentSpaceId, scale)
+          saveCanvasBgColor(currentSpaceId, bgColor)
       }
 
       setCurrentSpaceIdState(spaceId)
-      localStorage.setItem("current-space-id", spaceId)
+      setCurrentSpaceId(spaceId)
       await loadSpaceData(spaceId)
     } finally {
       isSwitchingRef.current = false
@@ -249,21 +281,15 @@ export function InfiniteCanvas() {
   }
 
   const handleCreateSpace = () => {
-    const newSpace = createLocalSpace(language === "fr" ? "Nouveau Jumble" : "New Jumble")
-    setSpaces(getLocalSpaces())
+    const newSpace = createSpace(language === "fr" ? "Nouveau Jumble" : "New Jumble")
+    setSpaces(getSpaces())
     handleSwitchSpace(newSpace.id)
   }
 
   const handleRenameSpace = () => {
     if (!currentSpaceId || !newSpaceName.trim()) return
-    const spaces = getLocalSpaces()
-    const space = spaces.find(s => s.id === currentSpaceId)
-    if (space) {
-      space.name = newSpaceName
-      space.lastModified = Date.now()
-      localStorage.setItem("spaces-list", JSON.stringify(spaces))
-      setSpaces(spaces)
-    }
+    updateSpace(currentSpaceId, { name: newSpaceName })
+    setSpaces(getSpaces())
     setIsSpaceRenameDialogOpen(false)
     setNewSpaceName("")
   }
@@ -283,14 +309,8 @@ export function InfiniteCanvas() {
     const isDeletingCurrent = currentSpaceId === deletingId
 
     // Supprimer le space (métadonnées + données associées)
-    const spaces = getLocalSpaces()
-    const newSpaces = spaces.filter(s => s.id !== deletingId)
-    localStorage.setItem("spaces-list", JSON.stringify(newSpaces))
-    
-    // Nettoyer les données du space
-    const { deleteSpace } = await import("@/lib/storage")
     deleteSpace(deletingId)
-
+    const newSpaces = getSpaces()
     setSpaces(newSpaces)
 
     // Fermer la modale
@@ -331,7 +351,7 @@ export function InfiniteCanvas() {
 
     saveTimeoutRef.current = setTimeout(async () => {
       if (currentSpaceId) {
-        await saveLocalElements(currentSpaceId, elements)
+        await saveElements(currentSpaceId, elements)
       }
     }, 500)
 
@@ -346,7 +366,7 @@ export function InfiniteCanvas() {
   useEffect(() => {
     if (!currentSpaceId) return
     const timeout = setTimeout(() => {
-      saveLocalOffset(currentSpaceId, canvasOffset)
+      saveCanvasOffset(currentSpaceId, canvasOffset)
     }, 1000)
     return () => clearTimeout(timeout)
   }, [canvasOffset, currentSpaceId])
@@ -355,7 +375,7 @@ export function InfiniteCanvas() {
   useEffect(() => {
     if (!currentSpaceId) return
     const timeout = setTimeout(() => {
-      saveLocalZoom(currentSpaceId, scale)
+      saveCanvasZoom(currentSpaceId, scale)
     }, 1000)
     return () => clearTimeout(timeout)
   }, [scale, currentSpaceId])
@@ -363,7 +383,7 @@ export function InfiniteCanvas() {
   // Sauvegarder la couleur de fond localement
   useEffect(() => {
     if (!currentSpaceId) return
-    saveLocalBgColor(currentSpaceId, bgColor)
+    saveCanvasBgColor(currentSpaceId, bgColor)
   }, [bgColor, currentSpaceId])
 
   // Sauvegarder avant de quitter la page
@@ -372,10 +392,10 @@ export function InfiniteCanvas() {
     const handleBeforeUnload = async () => {
       if (currentSpaceId) {
         // Sauvegarder localement
-        saveLocalOffset(currentSpaceId, canvasOffset)
-        saveLocalZoom(currentSpaceId, scale)
-        saveLocalBgColor(currentSpaceId, bgColor)
-        await saveLocalElements(currentSpaceId, elements)
+        saveCanvasOffset(currentSpaceId, canvasOffset)
+        saveCanvasZoom(currentSpaceId, scale)
+        saveCanvasBgColor(currentSpaceId, bgColor)
+        await saveElements(currentSpaceId, elements)
         
         // Sauvegarder le backup complet sur Supabase
         try {
@@ -401,17 +421,17 @@ export function InfiniteCanvas() {
       if (isSwitchingRef.current) return
       try {
         // Sauvegarder l'état courant localement d'abord
-        await saveLocalElements(currentSpaceId, elements)
-        saveLocalOffset(currentSpaceId, canvasOffset)
-        saveLocalZoom(currentSpaceId, scale)
-        saveLocalBgColor(currentSpaceId, bgColor)
+        await saveElements(currentSpaceId, elements)
+        saveCanvasOffset(currentSpaceId, canvasOffset)
+        saveCanvasZoom(currentSpaceId, scale)
+        saveCanvasBgColor(currentSpaceId, bgColor)
 
-        // Générer le payload de backup complet
+        // Générer le payload de backup complet depuis le stockage local
         const payload = await generateBackupPayload()
         
-        // Sauvegarder le backup sur Supabase
+        // Sauvegarder le backup JSON sur Supabase
         await saveBackup(user.id, payload.spaces, payload.currentSpaceId, payload.dataBySpace)
-        console.log("Backup sauvegardé avec succès")
+        console.log("Backup JSON sauvegardé avec succès")
       } catch (error) {
         console.error("Erreur backup périodique:", error)
       }
@@ -784,7 +804,7 @@ export function InfiniteCanvas() {
         saveTimeoutRef.current = null
       }
       // Sauvegarder immédiatement localement
-      await saveLocalElements(currentSpaceId, updatedElements)
+      await saveElements(currentSpaceId, updatedElements)
     }
   }
 
@@ -1839,18 +1859,18 @@ export function InfiniteCanvas() {
             if (originalId && data.dataBySpace[originalId]) {
               const spaceData = data.dataBySpace[originalId]
               // Créer le space localement
-              const newSpace = createLocalSpace(space.name)
+              const newSpace = createSpace(space.name)
               // Sauvegarder les données localement
-              await saveLocalElements(newSpace.id, spaceData.elements || [])
-              saveLocalOffset(newSpace.id, spaceData.canvasOffset || { x: 0, y: 0 })
-              saveLocalZoom(newSpace.id, spaceData.scale || 1)
-              saveLocalBgColor(newSpace.id, spaceData.bgColor || "bg-gray-50")
+              await saveElements(newSpace.id, spaceData.elements || [])
+              saveCanvasOffset(newSpace.id, spaceData.canvasOffset || { x: 0, y: 0 })
+              saveCanvasZoom(newSpace.id, spaceData.scale || 1)
+              saveCanvasBgColor(newSpace.id, spaceData.bgColor || "bg-gray-50")
             }
           }
           
           // Recharger la liste des spaces
-          const localSpaces = getLocalSpaces()
-          setSpaces(localSpaces)
+          const allSpaces = getSpaces()
+          setSpaces(allSpaces)
           
           // Si un currentSpaceId était défini dans l'export, essayer de le charger
           if (data.currentSpaceId) {
@@ -1858,14 +1878,14 @@ export function InfiniteCanvas() {
               data.spaces.find((os: Space) => os.id === data.currentSpaceId)?.name === s.name
             )
             if (matchingSpace) {
-              const foundSpace = localSpaces.find(s => s.name === matchingSpace.name)
+              const foundSpace = allSpaces.find(s => s.name === matchingSpace.name)
               if (foundSpace) {
                 await handleSwitchSpace(foundSpace.id)
               }
             }
           } else if (importedSpaces.length > 0) {
             // Sinon, charger le premier space importé
-            const firstSpace = localSpaces.find(s => s.name === importedSpaces[0].name)
+            const firstSpace = allSpaces.find(s => s.name === importedSpaces[0].name)
             if (firstSpace) {
               await handleSwitchSpace(firstSpace.id)
             }

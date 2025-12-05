@@ -82,6 +82,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.removeItem(key)
           }
         })
+        // Nettoyer les données Jumble du localStorage pour éviter les conflits entre comptes
+        localStorage.removeItem('spaces-list')
+        localStorage.removeItem('current-space-id')
+        localStorage.removeItem('jumble-session-id')
+        // Nettoyer les données IndexedDB aussi si possible
+        if (typeof indexedDB !== 'undefined') {
+          const deleteRequest = indexedDB.deleteDatabase('SpaceCanvasDB')
+          deleteRequest.onerror = () => {}
+          deleteRequest.onsuccess = () => {}
+        }
       } catch (e) {
         // Ignorer les erreurs de localStorage
       }

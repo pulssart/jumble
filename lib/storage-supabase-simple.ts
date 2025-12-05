@@ -121,21 +121,24 @@ export async function loadBackup(userId: string): Promise<BackupData | null> {
     const timeSinceUpdate = now - lastUpdate
     
     // Si c'est une autre session ET que le backup a été mis à jour il y a moins de 5 minutes
-    // (signifie qu'une autre session est active), on ferme cette session
+    // (signifie qu'une autre session est active), on prend le contrôle
     if (data.session_id !== currentSessionId && timeSinceUpdate < 5 * 60 * 1000) {
-      console.log("Une autre session est active (backup mis à jour il y a", Math.round(timeSinceUpdate / 1000), "secondes), fermeture de cette session")
-      // Déconnecter l'utilisateur pour forcer la reconnexion
-      await supabase.auth.signOut({ scope: 'local' })
-      // Rediriger vers la page de login
-      if (typeof window !== "undefined") {
-        alert("Une autre session est active. Cette session va être fermée.")
-        window.location.reload()
-      }
-      return null
+      console.log("Une autre session est active (backup mis à jour il y a", Math.round(timeSinceUpdate / 1000), "secondes), prise de contrôle de la session")
+      
+      // Mettre à jour le session_id pour prendre le contrôle
+      await supabase
+        .from("backups")
+        .update({
+          session_id: currentSessionId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+      
+      console.log("Contrôle de la session pris, chargement des données...")
     }
 
-    // Si c'est la même session ou si le backup est ancien, on charge les données
-    console.log("Backup chargé avec succès (session:", data.session_id === currentSessionId ? "actuelle" : "ancienne", ")")
+    // Charger les données (soit de la session actuelle, soit de la session dont on vient de prendre le contrôle)
+    console.log("Backup chargé avec succès")
     return data.backup_data as BackupData
   } catch (error) {
     console.error("Erreur chargement backup:", error)
