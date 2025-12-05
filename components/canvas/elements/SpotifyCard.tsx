@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { SpotifyElement } from "@/types/canvas"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -44,12 +44,36 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
   const [isEditing, setIsEditing] = useState(!element.spotifyUri)
   const [inputValue, setInputValue] = useState("")
   const [isInteractive, setIsInteractive] = useState(false)
+  const [isCommandPressed, setIsCommandPressed] = useState(false)
 
   // Dimensions locales pour la fluidité
   const [dimensions, setDimensions] = useState({
     width: element.width || 300,
     height: element.height || 380
   })
+
+  // Détection de la touche Command (Meta sur Mac, Ctrl sur Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        setIsCommandPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setIsCommandPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [])
 
   const handleSubmit = () => {
     const embedId = extractSpotifyId(inputValue)
@@ -127,6 +151,12 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
     )
   }
 
+  const handleMouseEnter = () => {
+    if (isCommandPressed) {
+      setIsInteractive(true)
+    }
+  }
+
   return (
     <div 
       className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden flex flex-col relative group"
@@ -135,6 +165,7 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
         height: dimensions.height,
         transition: 'width 0.1s, height 0.1s'
       }}
+      onMouseEnter={handleMouseEnter}
     >
       {/* Overlay pour le drag */}
       {!isInteractive && (

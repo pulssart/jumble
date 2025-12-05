@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { AppleMusicElement } from "@/types/canvas"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -29,12 +29,36 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
   const [isEditing, setIsEditing] = useState(!element.url)
   const [inputValue, setInputValue] = useState(element.url || "")
   const [isInteractive, setIsInteractive] = useState(false)
+  const [isCommandPressed, setIsCommandPressed] = useState(false)
 
   // Dimensions locales pour une expérience fluide
   const [dimensions, setDimensions] = useState({
     width: element.width || 360,
     height: element.height || 260,
   })
+
+  // Détection de la touche Command (Meta sur Mac, Ctrl sur Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        setIsCommandPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setIsCommandPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [])
 
   const handleSubmit = () => {
     let raw = inputValue.trim()
@@ -120,6 +144,12 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
 
   const embedUrl = element.url || ""
 
+  const handleMouseEnter = () => {
+    if (isCommandPressed) {
+      setIsInteractive(true)
+    }
+  }
+
   return (
     <div
       className="relative rounded-2xl shadow-lg bg-white border border-gray-200 overflow-hidden group"
@@ -128,6 +158,7 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
         height: dimensions.height,
         transition: "width 0.1s, height 0.1s",
       }}
+      onMouseEnter={handleMouseEnter}
     >
       {/* Overlay pour permettre le drag quand non interactif */}
       {!isInteractive && (

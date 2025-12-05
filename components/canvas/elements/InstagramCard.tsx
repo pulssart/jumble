@@ -61,6 +61,7 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
   const [inputValue, setInputValue] = useState("")
   const [isInteractive, setIsInteractive] = useState(false)
   const [embedUrl, setEmbedUrl] = useState<string>("")
+  const [isCommandPressed, setIsCommandPressed] = useState(false)
 
   useEffect(() => {
     if (element.shortcode) {
@@ -68,6 +69,29 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
       setEmbedUrl(url)
     }
   }, [element.shortcode, element.embedUrl])
+
+  // Détection de la touche Command (Meta sur Mac, Ctrl sur Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        setIsCommandPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setIsCommandPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [])
 
   const handleSubmit = () => {
     const shortcode = extractShortcode(inputValue)
@@ -115,6 +139,12 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
     )
   }
 
+  const handleMouseEnter = () => {
+    if (isCommandPressed) {
+      setIsInteractive(true)
+    }
+  }
+
   return (
     <div 
       className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden relative group"
@@ -122,7 +152,12 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
         width: element.width || 400,
         minHeight: element.height || 500,
       }}
-      onMouseLeave={() => setIsInteractive(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => {
+        if (!isCommandPressed) {
+          setIsInteractive(false)
+        }
+      }}
     >
       {/* Bouton d'édition (visible au survol) */}
       <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">

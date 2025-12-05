@@ -29,6 +29,7 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
   const [isEditing, setIsEditing] = useState(!element.videoId)
   const [inputValue, setInputValue] = useState("")
   const [isInteractive, setIsInteractive] = useState(false)
+  const [isCommandPressed, setIsCommandPressed] = useState(false)
   
   const [dimensions, setDimensions] = useState({
     width: element.width || 400,
@@ -40,6 +41,29 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
       setDimensions({ width: element.width, height: element.height })
     }
   }, [element.width, element.height])
+
+  // Détection de la touche Command (Meta sur Mac, Ctrl sur Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        setIsCommandPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setIsCommandPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [])
 
   const handleResizeStart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -120,6 +144,12 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
   // URL simple, pas d'autoplay forcé, on laisse YouTube gérer
   const embedUrl = `https://www.youtube.com/embed/${element.videoId}`
 
+  const handleMouseEnter = () => {
+    if (isCommandPressed) {
+      setIsInteractive(true)
+    }
+  }
+
   return (
     <div 
       className="rounded-xl shadow-lg bg-black border border-gray-200 overflow-hidden relative group"
@@ -128,7 +158,12 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
         height: dimensions.height,
         transition: 'width 0.05s, height 0.05s'
       }}
-      onMouseLeave={() => setIsInteractive(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => {
+        if (!isCommandPressed) {
+          setIsInteractive(false)
+        }
+      }}
     >
       <div className="relative w-full h-full">
         <iframe

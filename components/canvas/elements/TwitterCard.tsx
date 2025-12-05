@@ -30,6 +30,7 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
   const [isInteractive, setIsInteractive] = useState(false)
   const [tweetData, setTweetData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isCommandPressed, setIsCommandPressed] = useState(false)
 
   useEffect(() => {
     const loadTweet = async () => {
@@ -42,6 +43,29 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
     }
     loadTweet()
   }, [element.tweetId])
+
+  // Détection de la touche Command (Meta sur Mac, Ctrl sur Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        setIsCommandPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setIsCommandPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [])
 
   const handleSubmit = () => {
     const tweetId = extractTweetId(inputValue)
@@ -86,9 +110,15 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
     )
   }
 
+  const handleMouseEnter = () => {
+    if (isCommandPressed) {
+      setIsInteractive(true)
+    }
+  }
+
   return (
     <div className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden w-[400px] flex flex-col">
-      <div className="relative group min-h-[150px]">
+      <div className="relative group min-h-[150px]" onMouseEnter={handleMouseEnter}>
         {/* Overlay pour le drag */}
         {!isInteractive && (
           <div className="drag-handle absolute inset-0 z-10 cursor-grab active:cursor-grabbing bg-transparent" />
