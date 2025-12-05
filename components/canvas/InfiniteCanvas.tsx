@@ -15,7 +15,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -1890,6 +1890,36 @@ export function InfiniteCanvas() {
     importInputRef.current?.click()
   }
 
+  const handleForceBackup = async () => {
+    if (!user?.id || !currentSpaceId) {
+      alert(language === "fr" ? "Vous devez être connecté pour sauvegarder dans le cloud." : "You must be logged in to save to the cloud.")
+      return
+    }
+
+    try {
+      // Sauvegarder l'état actuel localement d'abord
+      await saveElements(currentSpaceId, elements)
+      saveCanvasOffset(currentSpaceId, canvasOffset)
+      saveCanvasZoom(currentSpaceId, scale)
+      saveCanvasBgColor(currentSpaceId, bgColor)
+
+      // Générer le payload de backup complet depuis le stockage local
+      const payload = await generateBackupPayload()
+      
+      // Sauvegarder le backup JSON sur Supabase
+      await saveBackup(user.id, payload.spaces, payload.currentSpaceId, payload.dataBySpace)
+      
+      alert(language === "fr" 
+        ? "✅ Backup sauvegardé avec succès dans le cloud !" 
+        : "✅ Backup saved successfully to the cloud!")
+    } catch (error) {
+      console.error("Erreur backup manuel:", error)
+      alert(language === "fr" 
+        ? "❌ Erreur lors de la sauvegarde du backup. Vérifiez la console pour plus de détails." 
+        : "❌ Error saving backup. Check the console for more details.")
+    }
+  }
+
   const handleImportSpace = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -2688,6 +2718,28 @@ export function InfiniteCanvas() {
                     : "Save or restore your entire Jumble (elements, positions, settings)."}
                 </p>
               </div>
+
+              {user && (
+                <div className="border-t pt-4 mt-4 space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                    <Cloud className="h-4 w-4" />
+                    {language === "fr" ? "Sauvegarde Cloud" : "Cloud Backup"}
+                  </label>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleForceBackup}
+                  >
+                    <Cloud className="h-4 w-4 mr-2" />
+                    {language === "fr" ? "Forcer le backup maintenant" : "Force backup now"}
+                  </Button>
+                  <p className="text-xs text-gray-500">
+                    {language === "fr"
+                      ? "Sauvegarde manuelle de votre Jumble dans le cloud. Le backup automatique se fait toutes les 2 minutes."
+                      : "Manual backup of your Jumble to the cloud. Automatic backup runs every 2 minutes."}
+                  </p>
+                </div>
+              )}
 
               <div className="border-t pt-4 mt-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
