@@ -68,6 +68,14 @@ export function InfiniteCanvas() {
   const lastMousePos = useRef({ x: 0, y: 0 })
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Refs pour le backup périodique (évite de recréer l'intervalle à chaque changement)
+  const elementsRef = useRef(elements)
+  const canvasOffsetRef = useRef(canvasOffset)
+  const scaleRef = useRef(scale)
+  const bgColorRef = useRef(bgColor)
+  const spacesRef = useRef(spaces)
+  const currentSpaceIdRef = useRef(currentSpaceId)
+
   // État pour le tracé de câbles
   const [connectionStart, setConnectionStart] = useState<{ id: string; x: number; y: number } | null>(null)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
@@ -433,32 +441,59 @@ export function InfiniteCanvas() {
     }
   }, [elements, canvasOffset, scale, bgColor, currentSpaceId, user?.id, spaces])
 
+  // Mettre à jour les refs quand les valeurs changent (pour le backup périodique)
+  useEffect(() => {
+    elementsRef.current = elements
+    canvasOffsetRef.current = canvasOffset
+    scaleRef.current = scale
+    bgColorRef.current = bgColor
+    spacesRef.current = spaces
+    currentSpaceIdRef.current = currentSpaceId
+  }, [elements, canvasOffset, scale, bgColor, spaces, currentSpaceId])
+
   // Backup périodique toutes les 2 minutes
   useEffect(() => {
-    if (!user?.id || !currentSpaceId) return
+    if (!user?.id) return
+
+    console.log("🔄 Démarrage du backup périodique (toutes les 2 minutes)")
 
     const backupInterval = setInterval(async () => {
-      if (isSwitchingRef.current) return
+      if (isSwitchingRef.current) {
+        console.log("⏸️ Backup ignoré : changement de space en cours")
+        return
+      }
+      
+      const currentSpace = currentSpaceIdRef.current
+      if (!currentSpace || !user?.id) {
+        console.log("⏸️ Backup ignoré : pas de space actif")
+        return
+      }
+
       try {
+        console.log("💾 Début du backup périodique...")
+        
         // Sauvegarder l'état courant localement d'abord
-        await saveElements(currentSpaceId, elements)
-        saveCanvasOffset(currentSpaceId, canvasOffset)
-        saveCanvasZoom(currentSpaceId, scale)
-        saveCanvasBgColor(currentSpaceId, bgColor)
+        await saveElements(currentSpace, elementsRef.current)
+        saveCanvasOffset(currentSpace, canvasOffsetRef.current)
+        saveCanvasZoom(currentSpace, scaleRef.current)
+        saveCanvasBgColor(currentSpace, bgColorRef.current)
 
         // Générer le payload de backup complet depuis le stockage local
         const payload = await generateBackupPayload()
         
         // Sauvegarder le backup JSON sur Supabase
         await saveBackup(user.id, payload.spaces, payload.currentSpaceId, payload.dataBySpace)
-        console.log("Backup JSON sauvegardé avec succès")
+        console.log("✅ Backup JSON sauvegardé avec succès à", new Date().toLocaleTimeString())
       } catch (error) {
-        console.error("Erreur backup périodique:", error)
+        console.error("❌ Erreur backup périodique:", error)
       }
-    }, 120_000) // toutes les 2 minutes
+    }, 120_000) // toutes les 2 minutes (120 secondes)
 
-    return () => clearInterval(backupInterval)
-  }, [user?.id, currentSpaceId, elements, canvasOffset, scale, bgColor, spaces])
+    return () => {
+      console.log("🛑 Arrêt du backup périodique")
+      clearInterval(backupInterval)
+    }
+  }, [user?.id]) // Seulement dépendre de user.id pour ne pas recréer l'intervalle
 
   // Écouter les messages de l'extension Chrome
   useEffect(() => {
