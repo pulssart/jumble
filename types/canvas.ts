@@ -1,4 +1,4 @@
-export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic" | "instagram"
+export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic" | "instagram" | "googlemaps"
 
 export interface Position {
   x: number
@@ -135,6 +135,12 @@ export interface InstagramElement extends BaseElement {
   embedUrl?: string // URL complète d'embed
 }
 
+export interface GoogleMapsElement extends BaseElement {
+  type: "googlemaps"
+  url: string // URL Google Maps (maps.app.goo.gl ou maps.google.com)
+  embedUrl?: string // URL d'embed générée
+}
+
 export type CanvasElement =
   | ImageElement
   | TextElement
@@ -154,6 +160,7 @@ export type CanvasElement =
   | ClockElement
   | AppleMusicElement
   | InstagramElement
+  | GoogleMapsElement
 
 export interface Space {
   id: string

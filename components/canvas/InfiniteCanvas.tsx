@@ -15,7 +15,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -811,6 +811,7 @@ export function InfiniteCanvas() {
       ...(type === "gif" && { src: "", alt: "" }),
       ...(type === "clock" && { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, isAnalog: false, showSeconds: false, is24Hour: true }),
       ...(type === "applemusic" && { url: "" }),
+      ...(type === "googlemaps" && { url: "" }),
     } as CanvasElement
     
     const updatedElements = [...elements, newElement]
@@ -961,6 +962,17 @@ export function InfiniteCanvas() {
             shortcode: shortcode,
             embedUrl: embedUrl,
           }
+        }
+      }
+      else if (url.includes("maps.app.goo.gl") || url.includes("maps.google.com") || url.includes("google.com/maps") || url.includes("google.com/maps/embed")) {
+        newElement = {
+          id: generateId(),
+          type: "googlemaps",
+          position: basePosition,
+          zIndex: getNextZIndex(),
+          url: url,
+          // Si c'est déjà une URL d'embed, la stocker aussi dans embedUrl
+          ...(url.includes("google.com/maps/embed") && { embedUrl: url }),
         }
       }
       else if (url.match(/\.gif$/i)) {
@@ -1535,7 +1547,7 @@ export function InfiniteCanvas() {
         groups[el.type].push(el)
     })
 
-    const typeOrder = ['prompt', 'postit', 'text', 'task', 'image', 'youtube', 'spotify', 'figma', 'notion', 'linear', 'linkedin', 'twitter', 'link']
+    const typeOrder = ['prompt', 'postit', 'text', 'task', 'image', 'youtube', 'spotify', 'figma', 'notion', 'linear', 'linkedin', 'twitter', 'link', 'googlemaps']
     const sortedTypes = Object.keys(groups).sort((a, b) => {
         const idxA = typeOrder.indexOf(a)
         const idxB = typeOrder.indexOf(b)
@@ -2289,6 +2301,10 @@ export function InfiniteCanvas() {
             <DropdownMenuItem onClick={() => addElement("instagram")}>
               <Instagram className="h-4 w-4 mr-2" />
               Instagram
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addElement("googlemaps")}>
+              <MapPin className="h-4 w-4 mr-2" />
+              {language === "fr" ? "Google Maps" : "Google Maps"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => addElement("link")}>
               <LinkIcon className="h-4 w-4 mr-2" />
