@@ -1791,9 +1791,12 @@ export function InfiniteCanvas() {
 
   const handleExportSpace = async () => {
     // On exporte désormais TOUS les spaces + leur configuration
-    const payload = await generateBackupPayload()
-    payload.version = 2
-    payload.timestamp = Date.now()
+    const backupData = await generateBackupPayload()
+    const payload = {
+      version: 2,
+      timestamp: Date.now(),
+      ...backupData,
+    }
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
     const url = URL.createObjectURL(blob)
