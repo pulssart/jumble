@@ -2600,7 +2600,7 @@ export function InfiniteCanvas() {
                       { class: "bg-yellow-50", nameFr: "Jaune", nameEn: "Yellow" },
                       { class: "bg-rose-50", nameFr: "Rose", nameEn: "Pink" },
                       { class: "bg-green-50", nameFr: "Vert", nameEn: "Green" },
-                      { class: "bg-slate-100", nameFr: "Ardoise", nameEn: "Slate" },
+                      { class: "bg-gray-900", nameFr: "Fond sombre", nameEn: "Dark background" },
                       { class: "bg-stone-100", nameFr: "Pierre", nameEn: "Stone" },
                       { class: "bg-orange-50", nameFr: "Orange", nameEn: "Orange" },
                       { class: "bg-indigo-50", nameFr: "Indigo", nameEn: "Indigo" },
@@ -2608,7 +2608,9 @@ export function InfiniteCanvas() {
                     <button
                       key={color.class}
                       className={`w-8 h-8 rounded-full border border-gray-200 ${color.class} ${
-                        bgColor === color.class ? "ring-2 ring-black ring-offset-2" : "hover:scale-110 transition-transform"
+                        bgColor === color.class 
+                          ? (color.class === "bg-gray-900" ? "ring-2 ring-white ring-offset-2" : "ring-2 ring-black ring-offset-2")
+                          : "hover:scale-110 transition-transform"
                       }`}
                       onClick={() => setBgColor(color.class)}
                       title={language === "fr" ? color.nameFr : color.nameEn}
