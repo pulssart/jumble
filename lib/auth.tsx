@@ -58,42 +58,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Essayer de se déconnecter avec scope local (au lieu de global) pour éviter les problèmes Safari
-      const { error } = await supabase.auth.signOut({ scope: 'local' })
-      if (error) {
-        console.warn("Erreur lors de la déconnexion Supabase:", error)
-        // Même en cas d'erreur, on nettoie le state local
-      }
-    } catch (err) {
-      console.error("Erreur lors de la déconnexion:", err)
-      // Même en cas d'erreur, on nettoie le state local
-    } finally {
-      // Toujours nettoyer le state local, même si l'appel API échoue
-      // Cela permet de fonctionner même si Safari bloque les cookies tiers
+      console.log("Déconnexion en cours...")
+      
+      // Nettoyer d'abord le state local pour une déconnexion immédiate
       setSession(null)
       setUser(null)
       
-      // Nettoyer aussi le localStorage pour forcer la déconnexion
+      // Nettoyer le localStorage AVANT l'appel API pour forcer la déconnexion
       try {
-        localStorage.removeItem('sb-ogmohzywzjcngxggozbz-auth-token')
-        // Nettoyer tous les tokens Supabase potentiels
+        // Nettoyer tous les tokens Supabase
         Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('sb-') || key.includes('supabase')) {
+          if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
             localStorage.removeItem(key)
           }
         })
-        // Nettoyer les données Jumble du localStorage pour éviter les conflits entre comptes
+        // Nettoyer les données Jumble du localStorage
         localStorage.removeItem('spaces-list')
         localStorage.removeItem('current-space-id')
         localStorage.removeItem('jumble-session-id')
-        // Nettoyer les données IndexedDB aussi si possible
+        localStorage.removeItem('space_openai_key')
+        
+        // Nettoyer IndexedDB
         if (typeof indexedDB !== 'undefined') {
           const deleteRequest = indexedDB.deleteDatabase('SpaceCanvasDB')
-          deleteRequest.onerror = () => {}
-          deleteRequest.onsuccess = () => {}
+          deleteRequest.onerror = () => {
+            console.warn("Erreur suppression IndexedDB (non bloquant)")
+          }
+          deleteRequest.onsuccess = () => {
+            console.log("IndexedDB supprimé avec succès")
+          }
         }
       } catch (e) {
-        // Ignorer les erreurs de localStorage
+        console.warn("Erreur nettoyage localStorage:", e)
+      }
+      
+      // Essayer de se déconnecter avec Supabase (avec timeout pour éviter les blocages)
+      try {
+        const signOutPromise = supabase.auth.signOut({ scope: 'local' })
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 5000)
+        )
+        
+        await Promise.race([signOutPromise, timeoutPromise])
+        console.log("Déconnexion Supabase réussie")
+      } catch (err: any) {
+        // Ignorer les erreurs de déconnexion Supabase (timeout, réseau, etc.)
+        // On a déjà nettoyé le state local, donc la déconnexion est effective
+        if (err?.message === "Timeout") {
+          console.warn("Timeout lors de la déconnexion Supabase (non bloquant)")
+        } else {
+          console.warn("Erreur lors de la déconnexion Supabase (non bloquant):", err)
+        }
+      }
+      
+      // Forcer un rechargement de la page pour s'assurer que tout est bien nettoyé
+      // Cela garantit que l'application revient à l'état de connexion
+      if (typeof window !== 'undefined') {
+        window.location.href = '/'
+      }
+    } catch (err) {
+      console.error("Erreur critique lors de la déconnexion:", err)
+      // Même en cas d'erreur critique, forcer le rechargement
+      if (typeof window !== 'undefined') {
+        window.location.href = '/'
       }
     }
   }

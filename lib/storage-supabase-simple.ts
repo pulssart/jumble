@@ -178,19 +178,26 @@ export async function loadBackup(userId: string): Promise<BackupData | null> {
       console.log("Une autre session est active (backup mis à jour il y a", Math.round(timeSinceUpdate / 1000), "secondes), prise de contrôle de la session")
       
       // Mettre à jour le session_id pour prendre le contrôle (sans attendre pour ne pas bloquer)
-      supabase
-        .from("backups")
-        .update({
-          session_id: currentSessionId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", userId)
-        .then(() => {
-          console.log("Contrôle de la session pris")
-        })
-        .catch((err) => {
+      // Utiliser une fonction async immédiatement invoquée pour gérer les erreurs
+      ;(async () => {
+        try {
+          const { error } = await supabase
+            .from("backups")
+            .update({
+              session_id: currentSessionId,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", userId)
+          
+          if (error) {
+            console.warn("Erreur lors de la prise de contrôle:", error)
+          } else {
+            console.log("Contrôle de la session pris")
+          }
+        } catch (err) {
           console.warn("Erreur lors de la prise de contrôle:", err)
-        })
+        }
+      })()
     }
 
     // Charger les données (soit de la session actuelle, soit de la session dont on vient de prendre le contrôle)
