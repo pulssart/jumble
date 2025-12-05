@@ -56,61 +56,113 @@ export async function saveBackup(
       dataBySpace,
     }
 
-    // Vérifier si un backup existe déjà
-    const { data: existing } = await supabase
-      .from("backups")
-      .select("id, session_id")
-      .eq("user_id", userId)
-      .single()
+    // Ajouter un timeout pour éviter les blocages
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => reject(new Error("Timeout")), 10000) // 10 secondes max
+    })
 
-    if (existing) {
-      // Mettre à jour le backup existant
-      const { error } = await supabase
+    const saveOperation = async () => {
+      // Vérifier si un backup existe déjà
+      const { data: existing, error: selectError } = await supabase
         .from("backups")
-        .update({
-          backup_data: backupData,
-          session_id: sessionId,
-          updated_at: new Date().toISOString(),
-        })
+        .select("id, session_id")
         .eq("user_id", userId)
+        .single()
 
-      if (error) throw error
-      console.log("Backup mis à jour avec succès")
-    } else {
-      // Créer un nouveau backup
-      const { error } = await supabase
-        .from("backups")
-        .insert({
-          user_id: userId,
-          backup_data: backupData,
-          session_id: sessionId,
-        })
+      // Si la table n'existe pas, ignorer silencieusement
+      if (selectError && (selectError.code === "42P01" || selectError.message?.includes("does not exist"))) {
+        console.warn("Table backups n'existe pas encore, sauvegarde ignorée")
+        return
+      }
 
-      if (error) throw error
-      console.log("Backup créé avec succès")
+      if (existing) {
+        // Mettre à jour le backup existant
+        const { error } = await supabase
+          .from("backups")
+          .update({
+            backup_data: backupData,
+            session_id: sessionId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+
+        if (error) {
+          // Si erreur de table inexistante, ignorer
+          if (error.code === "42P01" || error.message?.includes("does not exist")) {
+            console.warn("Table backups n'existe pas encore, sauvegarde ignorée")
+            return
+          }
+          throw error
+        }
+        console.log("Backup mis à jour avec succès")
+      } else {
+        // Créer un nouveau backup
+        const { error } = await supabase
+          .from("backups")
+          .insert({
+            user_id: userId,
+            backup_data: backupData,
+            session_id: sessionId,
+          })
+
+        if (error) {
+          // Si erreur de table inexistante, ignorer
+          if (error.code === "42P01" || error.message?.includes("does not exist")) {
+            console.warn("Table backups n'existe pas encore, sauvegarde ignorée")
+            return
+          }
+          throw error
+        }
+        console.log("Backup créé avec succès")
+      }
     }
-  } catch (error) {
-    console.error("Erreur sauvegarde backup:", error)
-    throw error
+
+    await Promise.race([saveOperation(), timeoutPromise])
+  } catch (error: any) {
+    // Ne pas bloquer l'application si la sauvegarde échoue
+    if (error?.message === "Timeout") {
+      console.warn("Timeout lors de la sauvegarde du backup")
+    } else {
+      console.error("Erreur sauvegarde backup:", error?.message || error)
+    }
+    // Ne pas throw pour ne pas bloquer l'application
   }
 }
 
 // Charger le dernier backup
 export async function loadBackup(userId: string): Promise<BackupData | null> {
   try {
-    const { data, error } = await supabase
+    // Ajouter un timeout pour éviter les blocages
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), 10000) // 10 secondes max
+    })
+
+    const queryPromise = supabase
       .from("backups")
       .select("backup_data, session_id, updated_at")
       .eq("user_id", userId)
       .single()
 
+    const result = await Promise.race([queryPromise, timeoutPromise])
+    
+    // Si timeout, retourner null
+    if (result === null) {
+      console.warn("Timeout lors du chargement du backup")
+      return null
+    }
+
+    const { data, error } = result as any
+
     if (error) {
-      if (error.code === "PGRST116") {
-        // Aucun backup trouvé
-        console.log("Aucun backup trouvé")
+      // Gérer tous les cas d'erreur possibles
+      if (error.code === "PGRST116" || error.code === "42P01" || error.message?.includes("does not exist")) {
+        // Aucun backup trouvé OU table n'existe pas encore
+        console.log("Aucun backup trouvé ou table inexistante:", error.code)
         return null
       }
-      throw error
+      // Pour toute autre erreur, logger et retourner null (ne pas bloquer)
+      console.warn("Erreur lors du chargement du backup:", error.code, error.message)
+      return null
     }
 
     if (!data) return null
@@ -125,23 +177,28 @@ export async function loadBackup(userId: string): Promise<BackupData | null> {
     if (data.session_id !== currentSessionId && timeSinceUpdate < 5 * 60 * 1000) {
       console.log("Une autre session est active (backup mis à jour il y a", Math.round(timeSinceUpdate / 1000), "secondes), prise de contrôle de la session")
       
-      // Mettre à jour le session_id pour prendre le contrôle
-      await supabase
+      // Mettre à jour le session_id pour prendre le contrôle (sans attendre pour ne pas bloquer)
+      supabase
         .from("backups")
         .update({
           session_id: currentSessionId,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", userId)
-      
-      console.log("Contrôle de la session pris, chargement des données...")
+        .then(() => {
+          console.log("Contrôle de la session pris")
+        })
+        .catch((err) => {
+          console.warn("Erreur lors de la prise de contrôle:", err)
+        })
     }
 
     // Charger les données (soit de la session actuelle, soit de la session dont on vient de prendre le contrôle)
     console.log("Backup chargé avec succès")
     return data.backup_data as BackupData
-  } catch (error) {
-    console.error("Erreur chargement backup:", error)
+  } catch (error: any) {
+    // Gérer toutes les erreurs possibles sans bloquer
+    console.error("Erreur chargement backup:", error?.message || error)
     return null
   }
 }

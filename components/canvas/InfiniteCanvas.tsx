@@ -136,24 +136,35 @@ export function InfiniteCanvas() {
         // Attendre un peu pour s'assurer que la session Supabase est bien initialisée
         await new Promise(resolve => setTimeout(resolve, 100))
         
-        // Vérifier la session Supabase
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log("Session Supabase:", session ? "Active" : "Aucune session")
-        if (!session) {
-          console.error("Aucune session Supabase active!")
-          setIsKeyLoaded(true)
-          return
+        // Vérifier la session Supabase (avec timeout)
+        let session = null
+        try {
+          const sessionResult = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise<{ data: { session: null } }>((resolve) => 
+              setTimeout(() => resolve({ data: { session: null } }), 5000)
+            )
+          ])
+          session = sessionResult.data.session
+        } catch (e) {
+          console.warn("Erreur vérification session:", e)
         }
         
-        // Charger le backup depuis Supabase
-        const backup = await loadBackup(user.id)
+        console.log("Session Supabase:", session ? "Active" : "Aucune session")
+        
+        // Charger le backup depuis Supabase (ne pas bloquer si ça échoue)
+        let backup = null
+        try {
+          backup = await loadBackup(user.id)
+        } catch (e) {
+          console.warn("Erreur lors du chargement du backup, continuation avec un compte vide:", e)
+        }
         
         if (backup) {
           console.log("Backup trouvé, restauration depuis Supabase...")
           
-          // Nettoyer complètement le stockage local pour éviter les conflits
           try {
-            // Nettoyer localStorage
+            // Nettoyer complètement le stockage local pour éviter les conflits
             localStorage.removeItem("spaces-list")
             localStorage.removeItem("current-space-id")
             // Nettoyer IndexedDB
@@ -162,40 +173,44 @@ export function InfiniteCanvas() {
               deleteRequest.onerror = () => {}
               deleteRequest.onsuccess = () => {}
             }
-          } catch (e) {
-            console.warn("Erreur nettoyage stockage:", e)
-          }
-          
-          // Restaurer les spaces dans le stockage local
-          const { saveSpaces } = await import("@/lib/storage")
-          saveSpaces(backup.spaces)
-          
-          // Restaurer les données de chaque space dans le stockage local
-          for (const space of backup.spaces) {
-            const spaceData = backup.dataBySpace[space.id]
-            if (spaceData) {
-              await saveElements(space.id, spaceData.elements)
-              saveCanvasOffset(space.id, spaceData.canvasOffset)
-              saveCanvasZoom(space.id, spaceData.scale)
-              saveCanvasBgColor(space.id, spaceData.bgColor)
+            
+            // Restaurer les spaces dans le stockage local
+            const { saveSpaces } = await import("@/lib/storage")
+            saveSpaces(backup.spaces)
+            
+            // Restaurer les données de chaque space dans le stockage local
+            for (const space of backup.spaces) {
+              const spaceData = backup.dataBySpace[space.id]
+              if (spaceData) {
+                await saveElements(space.id, spaceData.elements)
+                saveCanvasOffset(space.id, spaceData.canvasOffset)
+                saveCanvasZoom(space.id, spaceData.scale)
+                saveCanvasBgColor(space.id, spaceData.bgColor)
+              }
             }
+            
+            // Mettre à jour l'état React
+            setSpaces(backup.spaces)
+            
+            // Charger le space actif
+            const activeSpaceId = backup.currentSpaceId || (backup.spaces.length > 0 ? backup.spaces[0].id : null)
+            if (activeSpaceId) {
+              setCurrentSpaceIdState(activeSpaceId)
+              setCurrentSpaceId(activeSpaceId)
+              await loadSpaceData(activeSpaceId)
+            }
+          } catch (e) {
+            console.error("Erreur lors de la restauration du backup:", e)
+            // Continuer avec un compte vide si la restauration échoue
+            backup = null
           }
-          
-          // Mettre à jour l'état React
-          setSpaces(backup.spaces)
-          
-          // Charger le space actif
-          const activeSpaceId = backup.currentSpaceId || (backup.spaces.length > 0 ? backup.spaces[0].id : null)
-          if (activeSpaceId) {
-            setCurrentSpaceIdState(activeSpaceId)
-            setCurrentSpaceId(activeSpaceId)
-            await loadSpaceData(activeSpaceId)
-          }
-        } else {
+        }
+        
+        if (!backup) {
           console.log("Aucun backup trouvé, création d'un compte vide...")
           
-          // Pour un nouveau compte, nettoyer complètement le stockage local
           try {
+            // Pour un nouveau compte, nettoyer complètement le stockage local
             localStorage.removeItem("spaces-list")
             localStorage.removeItem("current-space-id")
             if (typeof indexedDB !== 'undefined') {
@@ -203,29 +218,34 @@ export function InfiniteCanvas() {
               deleteRequest.onerror = () => {}
               deleteRequest.onsuccess = () => {}
             }
+            
+            // Initialiser avec un space vide
+            const defaultSpace = await initSpaces()
+            const allSpaces = getSpaces()
+            setSpaces(allSpaces)
+            setCurrentSpaceIdState(defaultSpace.id)
+            await loadSpaceData(defaultSpace.id)
+            
+            // Sauvegarder immédiatement le backup initial (vide) - ne pas bloquer si ça échoue
+            try {
+              const initialPayload = await generateBackupPayload()
+              await saveBackup(user.id, initialPayload.spaces, initialPayload.currentSpaceId, initialPayload.dataBySpace)
+              console.log("Backup initial créé pour le nouveau compte")
+            } catch (e) {
+              console.warn("Erreur lors de la sauvegarde du backup initial (non bloquant):", e)
+            }
           } catch (e) {
-            console.warn("Erreur nettoyage stockage:", e)
+            console.error("Erreur lors de l'initialisation du compte vide:", e)
           }
-          
-          // Initialiser avec un space vide
-          const defaultSpace = await initSpaces()
-          const allSpaces = getSpaces()
-          setSpaces(allSpaces)
-          setCurrentSpaceIdState(defaultSpace.id)
-          await loadSpaceData(defaultSpace.id)
-          
-          // Sauvegarder immédiatement le backup initial (vide)
-          const initialPayload = await generateBackupPayload()
-          await saveBackup(user.id, initialPayload.spaces, initialPayload.currentSpaceId, initialPayload.dataBySpace)
-          console.log("Backup initial créé pour le nouveau compte")
         }
         
         const savedKey = localStorage.getItem("space_openai_key")
         if (savedKey) setOpenAIKey(savedKey)
-        setIsKeyLoaded(true)
         console.log("=== Initialisation terminée ===")
       } catch (error) {
         console.error("Erreur initialisation:", error)
+      } finally {
+        // TOUJOURS débloquer l'interface, même en cas d'erreur
         setIsKeyLoaded(true)
       }
     }
