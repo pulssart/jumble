@@ -6,7 +6,7 @@ Le système a été simplifié pour utiliser un backup JSON complet au lieu de t
 
 ### 1. Exécuter le schéma SQL simplifié
 
-1. Connectez-vous à votre projet Supabase : https://ogmohzywzjcngxggozbz.supabase.co
+1. Connectez-vous à votre projet Supabase : https://zoetbdwgtbmprbhforwf.supabase.co
 2. Allez dans l'éditeur SQL (SQL Editor dans le menu de gauche)
 3. Créez une nouvelle requête
 4. Copiez-collez le contenu du fichier `supabase-schema-simple.sql`

@@ -4,7 +4,7 @@
 
 ### 1. Exécuter le schéma SQL
 
-1. Connectez-vous à votre projet Supabase : https://ogmohzywzjcngxggozbz.supabase.co
+1. Connectez-vous à votre projet Supabase : https://zoetbdwgtbmprbhforwf.supabase.co
 2. Allez dans l'éditeur SQL (SQL Editor dans le menu de gauche)
 3. Créez une nouvelle requête
 4. Copiez-collez le contenu du fichier `supabase-schema.sql`
