@@ -159,15 +159,24 @@ export function InfiniteCanvas() {
     isSwitchingRef.current = true
     
     try {
+      // Annuler le timeout de sauvegarde en cours pour éviter les conflits
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = null
+      }
+
       // Sauvegarder l'état actuel avant de changer (sécurité)
       if (currentSpaceId) {
+          console.log("Sauvegarde avant switch:", currentSpaceId, "éléments:", elements.length)
           await saveElements(user.id, currentSpaceId, elements)
           await saveCanvasOffset(user.id, currentSpaceId, canvasOffset)
           await saveCanvasZoom(user.id, currentSpaceId, scale)
           await saveCanvasBgColor(user.id, currentSpaceId, bgColor)
+          console.log("Sauvegarde terminée pour space:", currentSpaceId)
       }
 
       setCurrentSpaceIdState(spaceId)
+      console.log("Chargement du space:", spaceId)
       await loadSpaceData(spaceId)
     } finally {
       isSwitchingRef.current = false
@@ -648,7 +657,7 @@ export function InfiniteCanvas() {
     }
   }, [])
 
-  const addElement = (type: CanvasElement["type"]) => {
+  const addElement = async (type: CanvasElement["type"]) => {
     const centerX = ((window.innerWidth / 2) - canvasOffset.x) / scale
     const centerY = ((window.innerHeight / 2) - canvasOffset.y) / scale
     
@@ -681,7 +690,20 @@ export function InfiniteCanvas() {
       ...(type === "clock" && { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, isAnalog: false, showSeconds: false, is24Hour: true }),
       ...(type === "applemusic" && { url: "" }),
     } as CanvasElement
-    setElements((prev) => [...prev, newElement])
+    
+    const updatedElements = [...elements, newElement]
+    setElements(updatedElements)
+    
+    // Sauvegarder immédiatement après l'ajout pour éviter la perte de données
+    if (user?.id && currentSpaceId) {
+      // Annuler le timeout de sauvegarde en cours
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = null
+      }
+      // Sauvegarder immédiatement
+      await saveElements(user.id, currentSpaceId, updatedElements)
+    }
   }
 
   const handleCreateElement = (content: string, type: "url" | "text") => {

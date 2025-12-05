@@ -357,10 +357,15 @@ export async function saveElements(
   elements: CanvasElement[]
 ): Promise<void> {
   try {
+    console.log(`Sauvegarde de ${elements.length} éléments pour space ${spaceId}`)
+    
     // Supprimer tous les éléments existants pour ce space
     await supabase.from("elements").delete().eq("space_id", spaceId).eq("user_id", userId)
 
-    if (elements.length === 0) return
+    if (elements.length === 0) {
+      console.log("Aucun élément à sauvegarder")
+      return
+    }
 
     // Créer un mapping des anciens IDs vers les nouveaux UUIDs valides
     const idMapping = new Map<string, string>()
@@ -390,7 +395,12 @@ export async function saveElements(
 
     const { error } = await supabase.from("elements").insert(rows)
 
-    if (error) throw error
+    if (error) {
+      console.error("Erreur insertion éléments:", error)
+      throw error
+    }
+
+    console.log(`${rows.length} éléments sauvegardés avec succès`)
 
     // Mettre à jour last_modified du space
     await supabase
@@ -409,6 +419,7 @@ export async function loadElements(
   spaceId: string
 ): Promise<CanvasElement[]> {
   try {
+    console.log(`Chargement des éléments pour space ${spaceId}`)
     const { data, error } = await supabase
       .from("elements")
       .select("*")
@@ -416,9 +427,14 @@ export async function loadElements(
       .eq("user_id", userId)
       .order("z_index", { ascending: true })
 
-    if (error) throw error
+    if (error) {
+      console.error("Erreur Supabase loadElements:", error)
+      throw error
+    }
 
-    return (data || []).map(rowToElement)
+    const loadedElements = (data || []).map(rowToElement)
+    console.log(`${loadedElements.length} éléments chargés pour space ${spaceId}`)
+    return loadedElements
   } catch (error) {
     console.error("Erreur chargement éléments:", error)
     return []
