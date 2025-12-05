@@ -9,8 +9,9 @@ import {
   saveCanvasOffset, loadCanvasOffset, 
   saveCanvasZoom, loadCanvasZoom, 
   saveCanvasBgColor, loadCanvasBgColor,
-  getSpaces, createSpace, updateSpace, setCurrentSpaceId, initSpaces, deleteSpace
-} from "@/lib/storage"
+  getSpaces, createSpace, updateSpace, initSpaces, deleteSpace,
+  migrateLocalDataToSupabase
+} from "@/lib/storage-supabase"
 import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut } from "lucide-react"
 import {
   Dialog,
@@ -34,6 +35,7 @@ import { Button } from "@/components/ui/button"
 import Logo from "../../logo.png"
 import { useLanguage } from "@/lib/language"
 import { useAuth } from "@/lib/auth"
+import { supabase } from "@/lib/supabase"
 
 export function InfiniteCanvas() {
   const { language, setLanguage } = useLanguage()
@@ -76,29 +78,62 @@ export function InfiniteCanvas() {
 
   // Initialisation des spaces
   useEffect(() => {
+    if (!user?.id) return
+
     const init = async () => {
-        const activeSpace = await initSpaces()
-        setSpaces(getSpaces())
+      try {
+        console.log("=== Initialisation Jumble ===")
+        console.log("User ID:", user.id)
+        console.log("User email:", user.email)
+        
+        // Attendre un peu pour s'assurer que la session Supabase est bien initialisée
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Vérifier la session Supabase
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log("Session Supabase:", session ? "Active" : "Aucune session")
+        if (!session) {
+          console.error("Aucune session Supabase active!")
+          setIsKeyLoaded(true)
+          return
+        }
+        
+        // Migrer les données locales vers Supabase si nécessaire
+        await migrateLocalDataToSupabase(user.id)
+        
+        // Charger les spaces depuis Supabase
+        const activeSpace = await initSpaces(user.id)
+        const userSpaces = await getSpaces(user.id)
+        console.log("Spaces chargés:", userSpaces)
+        
+        setSpaces(userSpaces)
         setCurrentSpaceIdState(activeSpace.id)
         
         // Charger les données du space actif
-        loadSpaceData(activeSpace.id)
+        console.log("Chargement des données du space:", activeSpace.id)
+        await loadSpaceData(activeSpace.id)
         
         const savedKey = localStorage.getItem("space_openai_key")
         if (savedKey) setOpenAIKey(savedKey)
         setIsKeyLoaded(true)
+        console.log("=== Initialisation terminée ===")
+      } catch (error) {
+        console.error("Erreur initialisation:", error)
+        setIsKeyLoaded(true)
+      }
     }
     
     init()
-  }, [])
+  }, [user?.id])
 
   const loadSpaceData = async (spaceId: string) => {
+    if (!user?.id) return
     setIsElementsLoaded(false)
     try {
-      const loadedElements = await loadElements(spaceId)
-      const loadedOffset = loadCanvasOffset(spaceId)
-      const loadedZoom = loadCanvasZoom(spaceId)
-      const loadedBgColor = loadCanvasBgColor(spaceId)
+      const loadedElements = await loadElements(user.id, spaceId)
+      const loadedOffset = await loadCanvasOffset(user.id, spaceId)
+      const loadedZoom = await loadCanvasZoom(user.id, spaceId)
+      const loadedBgColor = await loadCanvasBgColor(user.id, spaceId)
 
       setElements(loadedElements)
       setCanvasOffset(loadedOffset)
@@ -118,31 +153,33 @@ export function InfiniteCanvas() {
   }
 
   const handleSwitchSpace = async (spaceId: string) => {
-    if (spaceId === currentSpaceId) return
+    if (!user?.id || spaceId === currentSpaceId) return
     
     // Sauvegarder l'état actuel avant de changer (sécurité)
     if (currentSpaceId) {
-        await saveElements(currentSpaceId, elements)
-        saveCanvasOffset(currentSpaceId, canvasOffset)
-        saveCanvasZoom(currentSpaceId, scale)
-        saveCanvasBgColor(currentSpaceId, bgColor)
+        await saveElements(user.id, currentSpaceId, elements)
+        await saveCanvasOffset(user.id, currentSpaceId, canvasOffset)
+        await saveCanvasZoom(user.id, currentSpaceId, scale)
+        await saveCanvasBgColor(user.id, currentSpaceId, bgColor)
     }
 
     setCurrentSpaceIdState(spaceId)
-    setCurrentSpaceId(spaceId) // Persist
     await loadSpaceData(spaceId)
   }
 
-  const handleCreateSpace = () => {
-    const newSpace = createSpace(language === "fr" ? "Nouveau Jumble" : "New Jumble")
-    setSpaces(getSpaces())
-    handleSwitchSpace(newSpace.id)
+  const handleCreateSpace = async () => {
+    if (!user?.id) return
+    const newSpace = await createSpace(user.id, language === "fr" ? "Nouveau Jumble" : "New Jumble")
+    const userSpaces = await getSpaces(user.id)
+    setSpaces(userSpaces)
+    await handleSwitchSpace(newSpace.id)
   }
 
-  const handleRenameSpace = () => {
-    if (!currentSpaceId || !newSpaceName.trim()) return
-    updateSpace(currentSpaceId, { name: newSpaceName })
-    setSpaces(getSpaces())
+  const handleRenameSpace = async () => {
+    if (!user?.id || !currentSpaceId || !newSpaceName.trim()) return
+    await updateSpace(user.id, currentSpaceId, { name: newSpaceName })
+    const userSpaces = await getSpaces(user.id)
+    setSpaces(userSpaces)
     setIsSpaceRenameDialogOpen(false)
     setNewSpaceName("")
   }
@@ -156,16 +193,16 @@ export function InfiniteCanvas() {
   }
 
   const handleConfirmDeleteSpace = async () => {
-    if (!spaceToDelete) return
+    if (!user?.id || !spaceToDelete) return
 
     const deletingId = spaceToDelete.id
     const isDeletingCurrent = currentSpaceId === deletingId
 
     // Supprimer le space (métadonnées + données associées)
-    deleteSpace(deletingId)
+    await deleteSpace(user.id, deletingId)
 
     // Recharger la liste des spaces depuis le stockage
-    const updatedSpaces = getSpaces()
+    const updatedSpaces = await getSpaces(user.id)
     setSpaces(updatedSpaces)
 
     // Fermer la modale
@@ -198,15 +235,15 @@ export function InfiniteCanvas() {
 
   // Sauvegarder les éléments avec debounce
   useEffect(() => {
-    if (!isElementsLoaded || !currentSpaceId) return
+    if (!user?.id || !isElementsLoaded || !currentSpaceId) return
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      if (currentSpaceId) {
-        await saveElements(currentSpaceId, elements)
+      if (currentSpaceId && user.id) {
+        await saveElements(user.id, currentSpaceId, elements)
       }
     }, 500)
 
@@ -215,45 +252,43 @@ export function InfiniteCanvas() {
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [elements, isElementsLoaded, currentSpaceId])
+  }, [elements, isElementsLoaded, currentSpaceId, user?.id])
 
   // Sauvegarder la position du canvas avec debounce
   useEffect(() => {
-    if (!currentSpaceId) return
+    if (!user?.id || !currentSpaceId) return
     const timeout = setTimeout(() => {
-      saveCanvasOffset(currentSpaceId, canvasOffset)
+      saveCanvasOffset(user.id, currentSpaceId, canvasOffset)
     }, 1000)
     return () => clearTimeout(timeout)
-  }, [canvasOffset, currentSpaceId])
+  }, [canvasOffset, currentSpaceId, user?.id])
 
   // Sauvegarder le zoom avec debounce
   useEffect(() => {
-    if (!currentSpaceId) return
+    if (!user?.id || !currentSpaceId) return
     const timeout = setTimeout(() => {
-      saveCanvasZoom(currentSpaceId, scale)
+      saveCanvasZoom(user.id, currentSpaceId, scale)
     }, 1000)
     return () => clearTimeout(timeout)
-  }, [scale, currentSpaceId])
+  }, [scale, currentSpaceId, user?.id])
 
   // Sauvegarder la couleur de fond
   useEffect(() => {
-    if (!currentSpaceId) return
-    saveCanvasBgColor(currentSpaceId, bgColor)
-  }, [bgColor, currentSpaceId])
+    if (!user?.id || !currentSpaceId) return
+    saveCanvasBgColor(user.id, currentSpaceId, bgColor)
+  }, [bgColor, currentSpaceId, user?.id])
 
   // Sauvegarder avant de quitter la page
   useEffect(() => {
+    if (!user?.id) return
+    const userId = user.id
     const handleBeforeUnload = () => {
-      if (currentSpaceId) {
-        // On ne peut pas await dans beforeunload, mais IndexedDB est async...
-        // C'est une limitation connue. En général le debounce save suffit pour la plupart des cas.
-        // Pour beforeunload, on peut tenter d'envoyer une requête fetch keepalive ou d'utiliser le localStorage comme backup temporaire si vraiment critique,
-        // mais ici on va compter sur l'autosave fréquent (500ms).
-        
-        // On sauvegarde quand même les métadonnées sync
-        saveCanvasOffset(currentSpaceId, canvasOffset)
-        saveCanvasZoom(currentSpaceId, scale)
-        saveCanvasBgColor(currentSpaceId, bgColor)
+      if (currentSpaceId && userId) {
+        // On ne peut pas await dans beforeunload, mais on peut quand même envoyer les requêtes
+        // Supabase gère les requêtes asynchrones même dans beforeunload
+        saveCanvasOffset(userId, currentSpaceId, canvasOffset)
+        saveCanvasZoom(userId, currentSpaceId, scale)
+        saveCanvasBgColor(userId, currentSpaceId, bgColor)
       }
     }
 
@@ -261,7 +296,7 @@ export function InfiniteCanvas() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload)
     }
-  }, [elements, canvasOffset, scale, bgColor, currentSpaceId])
+  }, [elements, canvasOffset, scale, bgColor, currentSpaceId, user?.id])
 
   // Écouter les messages de l'extension Chrome
   useEffect(() => {
@@ -1620,8 +1655,9 @@ export function InfiniteCanvas() {
   }
 
   const handleExportSpace = async () => {
+    if (!user?.id) return
     // On exporte désormais TOUS les spaces + leur configuration
-    const allSpaces = getSpaces()
+    const allSpaces = await getSpaces(user.id)
 
     const payload: any = {
       version: 2,
@@ -1635,10 +1671,10 @@ export function InfiniteCanvas() {
       const spaceId = space.id
 
       // On recharge les données directement depuis le stockage pour être sûr d'avoir la vraie source de vérité
-      const spaceElements = await loadElements(spaceId)
-      const spaceOffset = loadCanvasOffset(spaceId)
-      const spaceZoom = loadCanvasZoom(spaceId)
-      const spaceBg = loadCanvasBgColor(spaceId)
+      const spaceElements = await loadElements(user.id, spaceId)
+      const spaceOffset = await loadCanvasOffset(user.id, spaceId)
+      const spaceZoom = await loadCanvasZoom(user.id, spaceId)
+      const spaceBg = await loadCanvasBgColor(user.id, spaceId)
 
       payload.dataBySpace[spaceId] = {
         elements: spaceElements,
@@ -1684,22 +1720,24 @@ export function InfiniteCanvas() {
           }))
           
           // Sauvegarder les spaces
-          importedSpaces.forEach((space: Space) => {
+          if (!user?.id) return
+          for (const space of importedSpaces) {
             const originalId = data.spaces.find((s: Space) => s.name === space.name)?.id
             if (originalId && data.dataBySpace[originalId]) {
               const spaceData = data.dataBySpace[originalId]
               // Créer le space
-              const newSpace = createSpace(space.name)
+              const newSpace = await createSpace(user.id, space.name)
               // Sauvegarder les données
-              saveElements(newSpace.id, spaceData.elements || [])
-              saveCanvasOffset(newSpace.id, spaceData.canvasOffset || { x: 0, y: 0 })
-              saveCanvasZoom(newSpace.id, spaceData.scale || 1)
-              saveCanvasBgColor(newSpace.id, spaceData.bgColor || "bg-gray-50")
+              await saveElements(user.id, newSpace.id, spaceData.elements || [])
+              await saveCanvasOffset(user.id, newSpace.id, spaceData.canvasOffset || { x: 0, y: 0 })
+              await saveCanvasZoom(user.id, newSpace.id, spaceData.scale || 1)
+              await saveCanvasBgColor(user.id, newSpace.id, spaceData.bgColor || "bg-gray-50")
             }
-          })
+          }
           
           // Recharger la liste des spaces
-          setSpaces(getSpaces())
+          const userSpaces = await getSpaces(user.id)
+          setSpaces(userSpaces)
           
           // Si un currentSpaceId était défini dans l'export, essayer de le charger
           if (data.currentSpaceId) {
@@ -1707,14 +1745,14 @@ export function InfiniteCanvas() {
               data.spaces.find((os: Space) => os.id === data.currentSpaceId)?.name === s.name
             )
             if (matchingSpace) {
-              const foundSpace = getSpaces().find(s => s.name === matchingSpace.name)
+              const foundSpace = userSpaces.find(s => s.name === matchingSpace.name)
               if (foundSpace) {
                 await handleSwitchSpace(foundSpace.id)
               }
             }
           } else if (importedSpaces.length > 0) {
             // Sinon, charger le premier space importé
-            const firstSpace = getSpaces().find(s => s.name === importedSpaces[0].name)
+            const firstSpace = userSpaces.find(s => s.name === importedSpaces[0].name)
             if (firstSpace) {
               await handleSwitchSpace(firstSpace.id)
             }
