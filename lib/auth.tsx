@@ -57,7 +57,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      // Essayer de se déconnecter avec scope local (au lieu de global) pour éviter les problèmes Safari
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      if (error) {
+        console.warn("Erreur lors de la déconnexion Supabase:", error)
+        // Même en cas d'erreur, on nettoie le state local
+      }
+    } catch (err) {
+      console.error("Erreur lors de la déconnexion:", err)
+      // Même en cas d'erreur, on nettoie le state local
+    } finally {
+      // Toujours nettoyer le state local, même si l'appel API échoue
+      // Cela permet de fonctionner même si Safari bloque les cookies tiers
+      setSession(null)
+      setUser(null)
+      
+      // Nettoyer aussi le localStorage pour forcer la déconnexion
+      try {
+        localStorage.removeItem('sb-ogmohzywzjcngxggozbz-auth-token')
+        // Nettoyer tous les tokens Supabase potentiels
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-') || key.includes('supabase')) {
+            localStorage.removeItem(key)
+          }
+        })
+      } catch (e) {
+        // Ignorer les erreurs de localStorage
+      }
+    }
   }
 
   return (
