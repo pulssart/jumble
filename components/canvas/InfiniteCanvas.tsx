@@ -68,10 +68,10 @@ export function InfiniteCanvas() {
   const lastMousePos = useRef({ x: 0, y: 0 })
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Refs pour le backup périodique (évite de recréer l'intervalle à chaque changement)
+  // Refs pour le backup périodique et autres usages (évite de recréer l'intervalle à chaque changement)
   const elementsRef = useRef(elements)
-  const canvasOffsetRef = useRef(canvasOffset)
   const scaleRef = useRef(scale)
+  const offsetRef = useRef(canvasOffset)
   const bgColorRef = useRef(bgColor)
   const spacesRef = useRef(spaces)
   const currentSpaceIdRef = useRef(currentSpaceId)
@@ -444,12 +444,12 @@ export function InfiniteCanvas() {
   // Mettre à jour les refs quand les valeurs changent (pour le backup périodique)
   useEffect(() => {
     elementsRef.current = elements
-    canvasOffsetRef.current = canvasOffset
     scaleRef.current = scale
+    offsetRef.current = canvasOffset
     bgColorRef.current = bgColor
     spacesRef.current = spaces
     currentSpaceIdRef.current = currentSpaceId
-  }, [elements, canvasOffset, scale, bgColor, spaces, currentSpaceId])
+  }, [elements, scale, canvasOffset, bgColor, spaces, currentSpaceId])
 
   // Backup périodique toutes les 2 minutes
   useEffect(() => {
@@ -474,7 +474,7 @@ export function InfiniteCanvas() {
         
         // Sauvegarder l'état courant localement d'abord
         await saveElements(currentSpace, elementsRef.current)
-        saveCanvasOffset(currentSpace, canvasOffsetRef.current)
+        saveCanvasOffset(currentSpace, offsetRef.current)
         saveCanvasZoom(currentSpace, scaleRef.current)
         saveCanvasBgColor(currentSpace, bgColorRef.current)
 
@@ -649,11 +649,6 @@ export function InfiniteCanvas() {
     )
   }, [])
 
-  const elementsRef = useRef(elements)
-  useEffect(() => {
-    elementsRef.current = elements
-  }, [elements])
-
   const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null; activeX?: number; activeY?: number }>({ x: null, y: null })
 
   // Mode focus sur une carte (zoom/pan temporaire)
@@ -712,13 +707,6 @@ export function InfiniteCanvas() {
     setCanvasOffset({ x: newOffsetX, y: newOffsetY })
   }
 
-  const scaleRef = useRef(scale)
-  const offsetRef = useRef(canvasOffset)
-
-  useEffect(() => {
-    scaleRef.current = scale
-    offsetRef.current = canvasOffset
-  }, [scale, canvasOffset])
 
   const handleFocusElement = useCallback((id: string) => {
     const target = elementsRef.current.find((el) => el.id === id)
