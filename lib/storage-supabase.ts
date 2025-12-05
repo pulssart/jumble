@@ -29,7 +29,7 @@ interface ElementRow {
   width?: number
   height?: number
   z_index?: number
-  parent_id?: string | null
+  parent_id?: string
   connections?: string[]
   data: Record<string, any>
 }
@@ -315,7 +315,7 @@ function elementToRow(element: CanvasElement, spaceId: string, userId: string): 
 
   // S'assurer que l'ID est un UUID valide
   const validId = ensureValidUUID(id)
-  const validParentId = parentId ? ensureValidUUID(parentId) : null
+  const validParentId = parentId ? ensureValidUUID(parentId) : undefined
   const validConnections = connections?.map(connId => ensureValidUUID(connId)) || []
 
   return {
@@ -327,7 +327,7 @@ function elementToRow(element: CanvasElement, spaceId: string, userId: string): 
     width,
     height,
     z_index: zIndex,
-    parent_id: validParentId,
+    ...(validParentId ? { parent_id: validParentId } : {}),
     connections: validConnections,
     data: rest, // Toutes les autres propriétés spécifiques au type
   }
@@ -376,10 +376,11 @@ export async function saveElements(
     // Mettre à jour les éléments avec les nouveaux IDs et références
     const updatedElements = elements.map(el => {
       const newId = idMapping.get(el.id)!
+      const newParentId = el.parentId ? idMapping.get(el.parentId) : undefined
       return {
         ...el,
         id: newId,
-        parentId: el.parentId ? idMapping.get(el.parentId) || null : null,
+        ...(newParentId ? { parentId: newParentId } : {}),
         connections: el.connections?.map(connId => idMapping.get(connId) || connId) || []
       }
     })
