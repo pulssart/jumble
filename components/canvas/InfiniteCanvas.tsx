@@ -11,7 +11,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   getSpaces, createSpace, updateSpace, setCurrentSpaceId, initSpaces, deleteSpace
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -33,9 +33,11 @@ import {
 import { Button } from "@/components/ui/button"
 import Logo from "../../logo.png"
 import { useLanguage } from "@/lib/language"
+import { useAuth } from "@/lib/auth"
 
 export function InfiniteCanvas() {
   const { language, setLanguage } = useLanguage()
+  const { signOut, user } = useAuth()
 
   // Space State
   const [spaces, setSpaces] = useState<Space[]>([])
@@ -2453,6 +2455,25 @@ export function InfiniteCanvas() {
                     ? "Sauvegardez ou restaurez l'intégralité de votre Jumble (éléments, positions, réglages)."
                     : "Save or restore your entire Jumble (elements, positions, settings)."}
                 </p>
+              </div>
+
+              <div className="border-t pt-4 mt-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  {language === "fr" ? "Compte" : "Account"}
+                </label>
+                {user && (
+                  <p className="text-xs text-gray-500 mb-2">
+                    {language === "fr" ? "Connecté en tant que" : "Signed in as"}: {user.email}
+                  </p>
+                )}
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={signOut}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Se déconnecter" : "Sign out"}
+                </Button>
               </div>
             </div>
           </DialogContent>
