@@ -61,6 +61,7 @@ export function InfiniteCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const isSwitchingRef = useRef(false)
   const lastMousePos = useRef({ x: 0, y: 0 })
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -154,17 +155,23 @@ export function InfiniteCanvas() {
 
   const handleSwitchSpace = async (spaceId: string) => {
     if (!user?.id || spaceId === currentSpaceId) return
+    if (isSwitchingRef.current) return
+    isSwitchingRef.current = true
     
-    // Sauvegarder l'état actuel avant de changer (sécurité)
-    if (currentSpaceId) {
-        await saveElements(user.id, currentSpaceId, elements)
-        await saveCanvasOffset(user.id, currentSpaceId, canvasOffset)
-        await saveCanvasZoom(user.id, currentSpaceId, scale)
-        await saveCanvasBgColor(user.id, currentSpaceId, bgColor)
-    }
+    try {
+      // Sauvegarder l'état actuel avant de changer (sécurité)
+      if (currentSpaceId) {
+          await saveElements(user.id, currentSpaceId, elements)
+          await saveCanvasOffset(user.id, currentSpaceId, canvasOffset)
+          await saveCanvasZoom(user.id, currentSpaceId, scale)
+          await saveCanvasBgColor(user.id, currentSpaceId, bgColor)
+      }
 
-    setCurrentSpaceIdState(spaceId)
-    await loadSpaceData(spaceId)
+      setCurrentSpaceIdState(spaceId)
+      await loadSpaceData(spaceId)
+    } finally {
+      isSwitchingRef.current = false
+    }
   }
 
   const handleCreateSpace = async () => {
@@ -297,6 +304,30 @@ export function InfiniteCanvas() {
       window.removeEventListener("beforeunload", handleBeforeUnload)
     }
   }, [elements, canvasOffset, scale, bgColor, currentSpaceId, user?.id])
+
+  // Synchronisation périodique (sauvegarde + rechargement) pour multi-navigateurs
+  useEffect(() => {
+    if (!user?.id || !currentSpaceId) return
+    const userId = user.id
+
+    const syncInterval = setInterval(async () => {
+      if (isSwitchingRef.current) return
+      try {
+        // Sauvegarder l'état courant
+        await saveElements(userId, currentSpaceId, elements)
+        await saveCanvasOffset(userId, currentSpaceId, canvasOffset)
+        await saveCanvasZoom(userId, currentSpaceId, scale)
+        await saveCanvasBgColor(userId, currentSpaceId, bgColor)
+
+        // Recharger pour récupérer d'éventuelles mises à jour d'autres sessions
+        await loadSpaceData(currentSpaceId)
+      } catch (error) {
+        console.error("Erreur synchronisation périodique:", error)
+      }
+    }, 60_000) // toutes les 60 secondes
+
+    return () => clearInterval(syncInterval)
+  }, [user?.id, currentSpaceId, elements, canvasOffset, scale, bgColor])
 
   // Écouter les messages de l'extension Chrome
   useEffect(() => {
