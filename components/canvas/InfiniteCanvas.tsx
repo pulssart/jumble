@@ -85,6 +85,9 @@ export function InfiniteCanvas() {
 
   // États pour la sélection multiple
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  
+  // Date de la dernière sauvegarde cloud
+  const [lastBackupDate, setLastBackupDate] = useState<Date | null>(null)
   const [selectionRect, setSelectionRect] = useState<{ x: number, y: number, width: number, height: number } | null>(null)
   const selectionStartRef = useRef<{ x: number, y: number } | null>(null)
   const isSelecting = useRef(false)
@@ -171,6 +174,21 @@ export function InfiniteCanvas() {
         
         if (backup) {
           console.log("Backup trouvé, restauration depuis Supabase...")
+          
+          // Récupérer la date du backup depuis Supabase
+          try {
+            const { data: backupData } = await supabase
+              .from("backups")
+              .select("updated_at")
+              .eq("user_id", user.id)
+              .single()
+            
+            if (backupData?.updated_at) {
+              setLastBackupDate(new Date(backupData.updated_at))
+            }
+          } catch (e) {
+            console.warn("Erreur récupération date backup:", e)
+          }
           
           try {
             // Nettoyer complètement le stockage local pour éviter les conflits
@@ -1968,6 +1986,9 @@ export function InfiniteCanvas() {
       // Sauvegarder le backup JSON sur Supabase
       await saveBackup(user.id, payload.spaces, payload.currentSpaceId, payload.dataBySpace)
       
+      // Mettre à jour la date de la dernière sauvegarde
+      setLastBackupDate(new Date())
+      
       alert(language === "fr" 
         ? "✅ Backup sauvegardé avec succès dans le cloud !" 
         : "✅ Backup saved successfully to the cloud!")
@@ -2641,6 +2662,31 @@ export function InfiniteCanvas() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Bouton Backup avec tooltip */}
+        <div className="relative group">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-9 w-9 rounded-full text-gray-700 hover:bg-gray-100"
+            onClick={handleForceBackup}
+          >
+            <Cloud className="h-4 w-4" />
+          </Button>
+          {/* Tooltip en dessous */}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+            {lastBackupDate 
+              ? (language === "fr" 
+                  ? `Dernière sauvegarde: ${lastBackupDate.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+                  : `Last backup: ${lastBackupDate.toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`)
+              : (language === "fr" 
+                  ? "Aucune sauvegarde cloud" 
+                  : "No cloud backup")}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -mb-1">
+              <div className="w-2 h-2 bg-gray-900 rotate-45"></div>
+            </div>
+          </div>
+        </div>
 
         <Dialog>
           <DialogTrigger asChild>
