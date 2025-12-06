@@ -1974,6 +1974,22 @@ export function InfiniteCanvas() {
       return
     }
 
+    // Vérifier si une sauvegarde a été faite il y a moins de 30 minutes
+    if (lastBackupDate) {
+      const timeSinceLastBackup = Date.now() - lastBackupDate.getTime()
+      const thirtyMinutes = 30 * 60 * 1000 // 30 minutes en millisecondes
+      
+      if (timeSinceLastBackup < thirtyMinutes) {
+        const remainingMinutes = Math.ceil((thirtyMinutes - timeSinceLastBackup) / (60 * 1000))
+        alert(
+          language === "fr" 
+            ? `⏱️ Veuillez attendre ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} avant de pouvoir faire une nouvelle sauvegarde.`
+            : `⏱️ Please wait ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} before you can make a new backup.`
+        )
+        return
+      }
+    }
+
     setIsBackingUp(true)
     try {
       // Sauvegarder l'état actuel localement d'abord
