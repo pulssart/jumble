@@ -15,7 +15,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud, Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -88,6 +88,7 @@ export function InfiniteCanvas() {
   
   // Date de la dernière sauvegarde cloud
   const [lastBackupDate, setLastBackupDate] = useState<Date | null>(null)
+  const [isBackingUp, setIsBackingUp] = useState(false)
   const [selectionRect, setSelectionRect] = useState<{ x: number, y: number, width: number, height: number } | null>(null)
   const selectionStartRef = useRef<{ x: number, y: number } | null>(null)
   const isSelecting = useRef(false)
@@ -1973,6 +1974,7 @@ export function InfiniteCanvas() {
       return
     }
 
+    setIsBackingUp(true)
     try {
       // Sauvegarder l'état actuel localement d'abord
       await saveElements(currentSpaceId, elements)
@@ -1997,6 +1999,8 @@ export function InfiniteCanvas() {
       alert(language === "fr" 
         ? "❌ Erreur lors de la sauvegarde du backup. Vérifiez la console pour plus de détails." 
         : "❌ Error saving backup. Check the console for more details.")
+    } finally {
+      setIsBackingUp(false)
     }
   }
 
@@ -2670,8 +2674,13 @@ export function InfiniteCanvas() {
             size="icon" 
             className="h-9 w-9 rounded-full text-gray-700 hover:bg-gray-100"
             onClick={handleForceBackup}
+            disabled={isBackingUp}
           >
-            <Cloud className="h-4 w-4" />
+            {isBackingUp ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Cloud className="h-4 w-4" />
+            )}
           </Button>
           {/* Tooltip en dessous */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
