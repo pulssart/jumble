@@ -110,7 +110,11 @@ export function LinkedinCard({ element, onUpdate }: LinkedinCardProps) {
     loadMetadata()
   }, [element.embedUrl])
 
-  const handleLinkSubmit = () => {
+  const handleLinkSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (inputValue.trim()) {
       // Reset metadata on URL change
       onUpdate({
@@ -152,13 +156,28 @@ export function LinkedinCard({ element, onUpdate }: LinkedinCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleLinkSubmit} size="sm">
+          <Button 
+            onClick={handleLinkSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditingLink(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditingLink(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>

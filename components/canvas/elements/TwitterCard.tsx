@@ -67,7 +67,11 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
     }
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const tweetId = extractTweetId(inputValue)
     if (tweetId) {
       onUpdate({
@@ -95,13 +99,28 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>

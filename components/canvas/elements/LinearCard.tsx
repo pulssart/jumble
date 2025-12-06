@@ -77,7 +77,11 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
     }
   }, [element.embedUrl])
 
-  const handleLinkSubmit = () => {
+  const handleLinkSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (inputValue.trim()) {
       // Reset ref pour forcer un nouveau fetch
       fetchedUrlRef.current = ""
@@ -117,14 +121,28 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleLinkSubmit} size="sm" onMouseDown={(e) => e.stopPropagation()}>
+          <Button 
+            onClick={handleLinkSubmit} 
+            size="sm" 
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditingLink(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditingLink(false)
+            }}
             variant="outline"
             size="sm"
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>

@@ -32,8 +32,8 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
   const [isCommandPressed, setIsCommandPressed] = useState(false)
   
   const [dimensions, setDimensions] = useState({
-    width: element.width || 400,
-    height: element.height || 225
+    width: element.width || 800,
+    height: element.height || 450
   })
 
   useEffect(() => {
@@ -100,7 +100,11 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
     document.addEventListener("mouseup", handleMouseUp)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const videoId = extractVideoId(inputValue) || inputValue
     if (videoId) {
       onUpdate({
@@ -126,13 +130,28 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             {language === "fr" ? "Valider" : "Validate"}
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             {language === "fr" ? "Annuler" : "Cancel"}
           </Button>

@@ -60,7 +60,11 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
     }
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     let raw = inputValue.trim()
 
     // Si l'utilisateur colle directement un <iframe> complet, on extrait le src
@@ -127,13 +131,28 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>

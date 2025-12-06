@@ -199,7 +199,11 @@ export function GoogleMapsCard({ element, onUpdate }: GoogleMapsCardProps) {
     document.addEventListener("mouseup", handleMouseUp)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (inputValue.trim()) {
       setIsLoadingEmbed(true)
       try {
@@ -269,13 +273,28 @@ export function GoogleMapsCard({ element, onUpdate }: GoogleMapsCardProps) {
           </div>
         )}
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             {language === "fr" ? "Valider" : "Submit"}
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             {language === "fr" ? "Annuler" : "Cancel"}
           </Button>

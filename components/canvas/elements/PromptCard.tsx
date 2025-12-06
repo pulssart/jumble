@@ -65,7 +65,22 @@ export function PromptCard({ element, onUpdate, onRun, hasConnectedInputs = fals
   const [prompt, setPrompt] = useState(element.content || "")
 
   const handleRun = (e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
+    
+    if (element.isRunning) return
+    
+    // Vérifier si on peut exécuter
+    const canRun = prompt.trim() || hasConnectedInputs
+    if (!canRun) return
+    
+    // S'assurer que le contenu est à jour avant d'exécuter
+    // On met à jour l'élément avec le prompt actuel
+    const updatedElement = { ...element, content: prompt }
+    onUpdate(updatedElement)
+    
+    // Utiliser le prompt actuel directement plutôt que d'attendre la mise à jour
+    // On passe le prompt mis à jour à handleRunPrompt via une modification temporaire
     onRun(element.id)
   }
 
@@ -256,7 +271,10 @@ export function PromptCard({ element, onUpdate, onRun, hasConnectedInputs = fals
           disabled={element.isRunning || (!prompt.trim() && !hasConnectedInputs)}
           className={`w-full ${element.isRunning ? 'bg-gray-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-gray-900 font-bold transition-all`}
           size="sm"
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
         >
           {element.isRunning ? (
             <>

@@ -75,7 +75,11 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
     }
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const embedId = extractSpotifyId(inputValue)
     if (embedId) {
       onUpdate({
@@ -136,13 +140,28 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>

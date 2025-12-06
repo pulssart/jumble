@@ -14,7 +14,11 @@ export function FigmaCard({ element, onUpdate }: FigmaCardProps) {
   const [isEditing, setIsEditing] = useState(!element.url)
   const [inputValue, setInputValue] = useState(element.url || "")
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (inputValue.includes("figma.com")) {
       onUpdate({
         ...element,
@@ -41,13 +45,28 @@ export function FigmaCard({ element, onUpdate }: FigmaCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>

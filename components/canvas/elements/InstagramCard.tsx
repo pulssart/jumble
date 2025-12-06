@@ -93,7 +93,11 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
     }
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const shortcode = extractShortcode(inputValue)
     if (shortcode) {
       const embed = getEmbedUrl(shortcode, inputValue)
@@ -124,13 +128,28 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} size="sm">
+          <Button 
+            onClick={handleSubmit} 
+            size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             {language === "fr" ? "Valider" : "Validate"}
           </Button>
           <Button
-            onClick={() => setIsEditing(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditing(false)
+            }}
             variant="outline"
             size="sm"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             {language === "fr" ? "Annuler" : "Cancel"}
           </Button>

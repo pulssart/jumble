@@ -77,7 +77,11 @@ export function NotionCard({ element, onUpdate }: NotionCardProps) {
     }
   }, [element.embedUrl])
 
-  const handleLinkSubmit = () => {
+  const handleLinkSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (inputValue.trim()) {
       // On reset le fetchedUrlRef pour forcer un nouveau fetch
       fetchedUrlRef.current = ""

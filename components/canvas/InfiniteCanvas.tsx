@@ -821,7 +821,7 @@ export function InfiniteCanvas() {
       ...(type === "text" && { content: "" }),
       ...(type === "task" && { title: "Nouvelle tâche", completed: false }),
       ...(type === "postit" && { content: "", color: "yellow" }),
-      ...(type === "youtube" && { videoId: "" }),
+      ...(type === "youtube" && { videoId: "", width: 800, height: 450 }),
       ...(type === "spotify" && { spotifyUri: "" }),
       ...(type === "figma" && { url: "" }),
       ...(type === "notion" && { embedUrl: "" }),
@@ -888,6 +888,8 @@ export function InfiniteCanvas() {
           position: basePosition,
           zIndex: getNextZIndex(),
           videoId: videoId,
+          width: 640,
+          height: 360,
         }
       }
       else if (url.includes("open.spotify.com")) {
@@ -1818,33 +1820,53 @@ export function InfiniteCanvas() {
   }, [connectionStart, canvasOffset, scale])
 
   const handleRunPrompt = async (promptId: string) => {
-     const promptElement = elements.find(el => el.id === promptId) as PromptElement
-     if (!promptElement || !openAIKey) {
-        if (!openAIKey) alert("Veuillez configurer votre clé API OpenAI.")
-        return
+     if (!openAIKey) {
+       alert("Veuillez configurer votre clé API OpenAI.")
+       return
      }
 
+     // Marquer comme en cours d'exécution
      setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: true } : el))
-
-     const inputElements = elements.filter(el => el.connections?.includes(promptId))
      
-     const inputs = inputElements.map(el => {
-        let content = ""
-        if (el.type === 'text') content = (el as any).content
-        if (el.type === 'postit') content = (el as any).content
-        if (el.type === 'task') content = (el as any).title
-        if (el.type === 'notion') content = `Page Notion: ${(el as any).embedUrl}`
-        if (el.type === 'linear') content = `Ticket Linear: ${(el as any).embedUrl}`
-        if (el.type === 'link') content = `Lien: ${(el as any).url}`
-        if (el.type === 'image') content = (el as any).src
-        return { type: el.type, content }
-     }).filter(i => i.content)
+     // Utiliser requestAnimationFrame pour s'assurer que React a mis à jour le state
+     requestAnimationFrame(() => {
+       // Récupérer la version la plus récente après la mise à jour
+       setElements(current => {
+         const promptElement = current.find(el => el.id === promptId) as PromptElement
+         if (!promptElement) return current
 
-     // Si pas de prompt et pas d'inputs, on ne peut pas exécuter
-     if (!promptElement.content && inputs.length === 0) {
-        setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: false } : el))
-        return
-     }
+         const inputElements = current.filter(el => el.connections?.includes(promptId))
+         
+         const inputs = inputElements.map(el => {
+            let content = ""
+            if (el.type === 'text') content = (el as any).content
+            if (el.type === 'postit') content = (el as any).content
+            if (el.type === 'task') content = (el as any).title
+            if (el.type === 'notion') content = `Page Notion: ${(el as any).embedUrl}`
+            if (el.type === 'linear') content = `Ticket Linear: ${(el as any).embedUrl}`
+            if (el.type === 'link') content = `Lien: ${(el as any).url}`
+            if (el.type === 'image') content = (el as any).src
+            return { type: el.type, content }
+         }).filter(i => i.content)
+
+         // Si pas de prompt et pas d'inputs, on ne peut pas exécuter
+         if (!promptElement.content && inputs.length === 0) {
+            return current.map(el => el.id === promptId ? { ...el, isRunning: false } : el)
+         }
+
+         // Exécuter le prompt de manière asynchrone
+         executePrompt(promptElement, inputs, promptId).catch(error => {
+           console.error("Erreur executePrompt", error)
+           setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: false } : el))
+           alert("Une erreur est survenue lors du traitement.")
+         })
+         
+         return current
+       })
+     })
+  }
+
+  const executePrompt = async (promptElement: PromptElement, inputs: { type: string; content: string }[], promptId: string) => {
 
      try {
         let resultContent = ""
@@ -1945,7 +1967,7 @@ export function InfiniteCanvas() {
             })
         })
      } catch (error) {
-         console.error("Erreur handleRunPrompt", error)
+         console.error("Erreur executePrompt", error)
          setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: false } : el))
          alert("Une erreur est survenue lors du traitement.")
      }

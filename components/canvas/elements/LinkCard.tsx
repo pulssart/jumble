@@ -57,7 +57,11 @@ export function LinkCard({ element, onUpdate }: LinkCardProps) {
 
   const domain = getDomain(element.url)
 
-  const handleLinkSubmit = () => {
+  const handleLinkSubmit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (inputValue.trim()) {
       let url = inputValue.trim()
       if (!url.startsWith("http")) {
@@ -103,14 +107,28 @@ export function LinkCard({ element, onUpdate }: LinkCardProps) {
           className="mb-2"
         />
         <div className="flex gap-2">
-          <Button onClick={handleLinkSubmit} size="sm" onMouseDown={(e) => e.stopPropagation()}>
+          <Button 
+            onClick={handleLinkSubmit} 
+            size="sm" 
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
             Valider
           </Button>
           <Button
-            onClick={() => setIsEditingLink(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsEditingLink(false)
+            }}
             variant="outline"
             size="sm"
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
           >
             Annuler
           </Button>
