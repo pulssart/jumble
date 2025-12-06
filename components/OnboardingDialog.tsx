@@ -56,7 +56,7 @@ export function OnboardingDialog() {
         {/* Content */}
         <DialogPrimitive.Content
           className={cn(
-            "fixed left-[50%] top-[50%] z-50 w-full max-w-5xl translate-x-[-50%] translate-y-[-50%] border-0 bg-white p-16 shadow-lg rounded-[12px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
+            "fixed left-[50%] top-[50%] z-50 w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] border-0 bg-white p-8 shadow-lg rounded-[12px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
           )}
           style={{ 
             backgroundColor: '#FFFFFF',
@@ -92,16 +92,18 @@ export function OnboardingDialog() {
           </p>
 
           {/* 3 Cartes horizontales avec rotation légère */}
-          <div className="grid w-full grid-cols-3 gap-6 mb-10">
+          <div className="grid w-full max-w-3xl mx-auto grid-cols-3 gap-0 mb-10">
             {/* Carte 1: DÉPOSEZ */}
             <div 
-              className="bg-white rounded-[6px] p-6 shadow-md"
+              className="bg-white rounded-[6px] p-6 shadow-md relative z-10"
               style={{ 
                 backgroundColor: '#FFFFFF',
                 borderRadius: '6px',
                 boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                transform: 'rotate(2deg)',
-                padding: '24px'
+                border: '1px solid #F0F0F0',
+                transform: 'rotate(4deg)',
+                padding: '24px',
+                marginRight: '0px'
               }}
             >
               <p 
@@ -143,13 +145,16 @@ export function OnboardingDialog() {
 
             {/* Carte 2: ORDONNEZ */}
             <div 
-              className="bg-white rounded-[6px] p-6 shadow-md"
+              className="bg-white rounded-[6px] p-6 shadow-md relative z-20"
               style={{ 
                 backgroundColor: '#FFFFFF',
                 borderRadius: '6px',
                 boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                transform: 'rotate(-1deg)',
-                padding: '24px'
+                border: '1px solid #F0F0F0',
+                transform: 'rotate(-3deg)',
+                padding: '24px',
+                marginLeft: '0px',
+                marginRight: '0px'
               }}
             >
               <p 
@@ -191,13 +196,15 @@ export function OnboardingDialog() {
 
             {/* Carte 3: NAVIGUEZ */}
             <div 
-              className="bg-white rounded-[6px] p-6 shadow-md"
+              className="bg-white rounded-[6px] p-6 shadow-md relative z-30"
               style={{ 
                 backgroundColor: '#FFFFFF',
                 borderRadius: '6px',
                 boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                transform: 'rotate(1.5deg)',
-                padding: '24px'
+                border: '1px solid #F0F0F0',
+                transform: 'rotate(3.5deg)',
+                padding: '24px',
+                marginLeft: '0px'
               }}
             >
               <p 
@@ -255,7 +262,7 @@ export function OnboardingDialog() {
           {/* Bouton - #000000 background, #FFFFFF text, bold, rounded 8px */}
           <Button
             onClick={handleClose}
-            className="w-full max-w-lg py-4 text-base font-bold rounded-[8px]"
+            className="w-full py-8 text-base font-bold rounded-[8px]"
             style={{ 
               backgroundColor: '#000000',
               color: '#FFFFFF',
@@ -263,7 +270,7 @@ export function OnboardingDialog() {
               lineHeight: '1.5',
               fontWeight: 700,
               borderRadius: '8px',
-              padding: '16px 32px',
+              padding: '24px 32px',
               border: 'none'
             }}
           >

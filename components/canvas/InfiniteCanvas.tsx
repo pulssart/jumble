@@ -9,9 +9,9 @@ import {
 } from "@/lib/storage-supabase-simple"
 import { 
   getSpaces, createSpace, updateSpace, deleteSpace, initSpaces,
-  saveElements, loadElements,
-  saveCanvasOffset, loadCanvasOffset,
-  saveCanvasZoom, loadCanvasZoom,
+  saveElements, loadElements, 
+  saveCanvasOffset, loadCanvasOffset, 
+  saveCanvasZoom, loadCanvasZoom, 
   saveCanvasBgColor, loadCanvasBgColor,
   setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
@@ -293,16 +293,16 @@ export function InfiniteCanvas() {
     
     try {
       // Sauvegarder l'état actuel avant de changer
-      if (currentSpaceId) {
-          await saveElements(currentSpaceId, elements)
-          saveCanvasOffset(currentSpaceId, canvasOffset)
-          saveCanvasZoom(currentSpaceId, scale)
-          saveCanvasBgColor(currentSpaceId, bgColor)
-      }
+    if (currentSpaceId) {
+        await saveElements(currentSpaceId, elements)
+        saveCanvasOffset(currentSpaceId, canvasOffset)
+        saveCanvasZoom(currentSpaceId, scale)
+        saveCanvasBgColor(currentSpaceId, bgColor)
+    }
 
-      setCurrentSpaceIdState(spaceId)
+    setCurrentSpaceIdState(spaceId)
       setCurrentSpaceId(spaceId)
-      await loadSpaceData(spaceId)
+    await loadSpaceData(spaceId)
     } finally {
       isSwitchingRef.current = false
     }
