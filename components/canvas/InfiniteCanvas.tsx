@@ -39,6 +39,7 @@ import Logo from "../../logo.png"
 import { useLanguage } from "@/lib/language"
 import { useAuth } from "@/lib/auth"
 import { supabase } from "@/lib/supabase"
+import { markdownToHtml } from "@/lib/utils"
 
 export function InfiniteCanvas() {
   const { language, setLanguage } = useLanguage()
@@ -1459,7 +1460,7 @@ export function InfiniteCanvas() {
     }
   }, [])
 
-  const handleAIAction = async (originId: string, topic: string, actionType: 'ideas' | 'tasks' | 'image') => {
+  const handleAIAction = async (originId: string, topic: string, actionType: 'ideas' | 'tasks' | 'image' | 'summary-with-action' | 'summary') => {
     if (!openAIKey) {
       alert("Veuillez d'abord configurer votre clé API OpenAI dans les paramètres.")
       return
@@ -1476,6 +1477,59 @@ export function InfiniteCanvas() {
     const radius = 350
 
     try {
+      // Nouvelles actions pour TextCard
+      if (actionType === 'summary-with-action') {
+        const instruction = language === "fr" 
+          ? "Résume ce contenu et crée un plan d'action détaillé avec les points clés et les prochaines étapes."
+          : "Summarize this content and create a detailed action plan with key points and next steps."
+        
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], openAIKey)
+        const htmlContent = markdownToHtml(resultContent)
+        
+        const x = originElement.position.x + width + 50
+        const y = originElement.position.y
+
+        const newElement: CanvasElement = {
+          id: generateId(),
+          type: "text",
+          content: htmlContent,
+          position: { x, y },
+          zIndex: getNextZIndex(),
+          width: 400,
+          height: 300,
+          parentId: originId
+        } as any
+        
+        setElements(prev => [...prev, newElement])
+        return
+      }
+
+      if (actionType === 'summary') {
+        const instruction = language === "fr" 
+          ? "Fais un résumé simple et concis de ce contenu."
+          : "Make a simple and concise summary of this content."
+        
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], openAIKey)
+        const htmlContent = markdownToHtml(resultContent)
+        
+        const x = originElement.position.x + width + 50
+        const y = originElement.position.y
+
+        const newElement: CanvasElement = {
+          id: generateId(),
+          type: "text",
+          content: htmlContent,
+          position: { x, y },
+          zIndex: getNextZIndex(),
+          width: 400,
+          height: 300,
+          parentId: originId
+        } as any
+        
+        setElements(prev => [...prev, newElement])
+        return
+      }
+
       if (actionType === 'ideas') {
         const ideas = await generateBrainstormingIdeas(topic, openAIKey)
         if (ideas.length === 0) return
@@ -1500,6 +1554,7 @@ export function InfiniteCanvas() {
         setElements(prev => [...prev, ...newElements])
 
       } else if (actionType === 'tasks') {
+        // Pour les TextCard, on utilise generateTasks comme pour PostItCard
         const result = await generateTasks(topic, openAIKey)
         if (result.steps.length === 0) return
 
@@ -1764,7 +1819,7 @@ export function InfiniteCanvas() {
 
   const handleRunPrompt = async (promptId: string) => {
      const promptElement = elements.find(el => el.id === promptId) as PromptElement
-     if (!promptElement || !promptElement.content || !openAIKey) {
+     if (!promptElement || !openAIKey) {
         if (!openAIKey) alert("Veuillez configurer votre clé API OpenAI.")
         return
      }
@@ -1785,6 +1840,12 @@ export function InfiniteCanvas() {
         return { type: el.type, content }
      }).filter(i => i.content)
 
+     // Si pas de prompt et pas d'inputs, on ne peut pas exécuter
+     if (!promptElement.content && inputs.length === 0) {
+        setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: false } : el))
+        return
+     }
+
      try {
         let resultContent = ""
         let resultType: "text" | "image" = "text"
@@ -1792,13 +1853,37 @@ export function InfiniteCanvas() {
         if (promptElement.outputType === 'image') {
             console.log("Début génération image. Mode: Image")
             let imagePrompt = promptElement.content
+            
+            // Ajouter le style au prompt
+            const style = promptElement.imageStyle
+            let stylePrefix = ""
+            
+            if (style === 'wireframe') {
+              stylePrefix = "Create a minimalist hand-drawn wireframe in black wire lines on white background for product design. The wireframe should be very simple, sketchy, and show the basic structure and layout. "
+            } else if (style === 'realistic') {
+              stylePrefix = "Create a realistic, photorealistic image. "
+            } else if (style === 'cartoon') {
+              stylePrefix = "Create a cartoon-style illustration. "
+            } else if (style === 'anime') {
+              stylePrefix = "Create an anime-style illustration. "
+            } else if (style === 'watercolor') {
+              stylePrefix = "Create a watercolor painting. "
+            } else if (style === 'oil-painting') {
+              stylePrefix = "Create an oil painting. "
+            } else if (style === 'sketch') {
+              stylePrefix = "Create a pencil sketch. "
+            }
+            
             if (inputs.length > 0) {
                 console.log("Inputs détectés, génération prompt synthétique...")
-                const synthesisPrompt = "Analyse ces inputs et crée une description détaillée et visuelle (en anglais pour DALL-E) pour générer une image qui correspond à la demande suivante : " + promptElement.content
+                const synthesisPrompt = stylePrefix + "Analyse ces inputs et crée une description détaillée et visuelle (en anglais pour DALL-E) pour générer une image qui correspond à la demande suivante : " + promptElement.content
                 imagePrompt = await runPrompt(synthesisPrompt, inputs, openAIKey)
                 console.log("Prompt synthétique généré:", imagePrompt)
             } else {
-                console.log("Pas d'inputs, utilisation du prompt direct:", imagePrompt)
+                console.log("Pas d'inputs, utilisation du prompt direct avec style:", style)
+                if (stylePrefix) {
+                  imagePrompt = stylePrefix + imagePrompt
+                }
             }
             
             console.log("Appel generateImage avec prompt:", imagePrompt)
@@ -1834,10 +1919,12 @@ export function InfiniteCanvas() {
                 height: 400,
              } as any
         } else {
+             // Convertir le markdown en HTML pour un meilleur formatage
+             const htmlContent = markdownToHtml(resultContent)
              outputElement = {
                 id: generateId(),
                 type: "text",
-                content: resultContent,
+                content: htmlContent,
                 position: { x: newX, y: newY },
                 zIndex: getNextZIndex(),
                 width: 300,
@@ -2054,27 +2141,31 @@ export function InfiniteCanvas() {
             const cW = el.width || 220
             const cH = el.height || 220
 
-            const startX = parent.position.x + pW / 2
+            // Port de sortie du parent (droite) : -right-3 = 12px depuis le bord droit
+            const startX = parent.position.x + pW + 12
             const startY = parent.position.y + pH / 2
-            const endX = el.position.x + cW / 2
+            
+            // Port d'entrée de l'enfant (gauche) : -left-3 = 12px depuis le bord gauche
+            const endX = el.position.x - 12
             const endY = el.position.y + cH / 2
 
-            const deltaX = endX - startX
-            const cp1x = startX + deltaX * 0.5
+            const deltaX = Math.abs(endX - startX) * 0.5
+            const cp1x = startX + deltaX
             const cp1y = startY 
-            const cp2x = endX - deltaX * 0.5
+            const cp2x = endX - deltaX
             const cp2y = endY
 
             return (
               <g key={`parent-${parent.id}-${el.id}`}>
                 <path
                   d={`M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`}
-                  stroke="#E2E8F0"
-                  strokeWidth="2"
+                  stroke="#fbbf24"
+                  strokeWidth="3"
                   fill="none"
+                  className="opacity-80"
                 />
-                <circle cx={startX} cy={startY} r="3" fill="#CBD5E1" />
-                <circle cx={endX} cy={endY} r="3" fill="#CBD5E1" />
+                <circle cx={startX} cy={startY} r="3" fill="#fbbf24" />
+                <circle cx={endX} cy={endY} r="3" fill="#fbbf24" />
               </g>
             )
           })}
@@ -2088,12 +2179,15 @@ export function InfiniteCanvas() {
 
                const sW = sourceEl.width || (sourceEl.type === 'prompt' ? 300 : 300) 
                const sH = sourceEl.height || 200
+               const tW = targetEl.width || 300
                const tH = targetEl.height || 200
                
-               const startX = sourceEl.position.x + sW + 4
+               // Port de sortie (droite) : -right-3 = 12px depuis le bord droit, centré verticalement
+               const startX = sourceEl.position.x + sW + 12
                const startY = sourceEl.position.y + sH / 2
                
-               const endX = targetEl.position.x - 4
+               // Port d'entrée (gauche) : -left-3 = 12px depuis le bord gauche, centré verticalement
+               const endX = targetEl.position.x - 12
                const endY = targetEl.position.y + tH / 2
                
                const deltaX = Math.abs(endX - startX) * 0.5
@@ -2150,9 +2244,15 @@ export function InfiniteCanvas() {
           return elements.map((element) => {
             // Si aucune connexion n'existe, tous les éléments sont considérés comme "connectés" (opacité 100%)
             // Sinon, seuls les éléments du groupe connecté sont à 100%
-            const isConnected = !hasAnyConnection || connectedElements.has(element.id)
+            // Les éléments avec un parentId sont aussi considérés comme connectés (outputs)
+            const isConnected = !hasAnyConnection || connectedElements.has(element.id) || !!element.parentId
             const isFocused = focusState?.id === element.id
             const isDimmed = !!focusState && focusState.id !== element.id
+            
+            // Pour les prompts, vérifier s'il y a des inputs connectés
+            const hasConnectedInputs = element.type === 'prompt' 
+              ? elements.some(el => el.connections?.includes(element.id))
+              : false
             
             return (
               <CanvasElementComponent
@@ -2164,6 +2264,7 @@ export function InfiniteCanvas() {
                 isConnecting={isConnecting}
                 isFocused={isFocused}
                 isDimmed={isDimmed}
+                hasConnectedInputs={hasConnectedInputs}
                 onSelect={handleElementSelect}
                 onUpdate={handleUpdateElement}
                 onDelete={handleDeleteElement}

@@ -50,12 +50,13 @@ interface CanvasElementProps {
   getSnappingPosition: (id: string, x: number, y: number) => { x: number; y: number; snappedX?: number | null; snappedY?: number | null }
   onSnap?: (lines: { x: number | null; y: number | null; activeX?: number; activeY?: number }) => void
   onDrag?: (id: string, x: number, y: number) => void
-  onAIAction?: (id: string, content: string, actionType: 'ideas' | 'tasks' | 'image') => void
+  onAIAction?: (id: string, content: string, actionType: 'ideas' | 'tasks' | 'image' | 'summary-with-action' | 'summary') => void
   onConnectStart: (elementId: string, x: number, y: number) => void
   onConnectEnd: (elementId: string) => void
   onRunPrompt: (id: string) => void
   onFocusElement?: (id: string) => void
   scale: number
+  hasConnectedInputs?: boolean
 }
 
 export const CanvasElementComponent = React.memo(function CanvasElementComponent({
@@ -81,6 +82,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   onRunPrompt,
   onFocusElement,
   scale,
+  hasConnectedInputs = false,
 }: CanvasElementProps) {
   const { language } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
@@ -222,7 +224,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
       case "image":
         return <ImageCard element={element} onUpdate={onUpdate} />
       case "text":
-        return <TextCard element={element} onUpdate={onUpdate} />
+        return <TextCard element={element} onUpdate={onUpdate} onAIAction={onAIAction} />
       case "task":
         return <TaskCard element={element} onUpdate={onUpdate} />
       case "postit":
@@ -244,7 +246,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
       case "link":
         return <LinkCard element={element} onUpdate={onUpdate} />
       case "prompt":
-        return <PromptCard element={element} onUpdate={onUpdate} onRun={onRunPrompt} />
+        return <PromptCard element={element} onUpdate={onUpdate} onRun={onRunPrompt} hasConnectedInputs={hasConnectedInputs} />
       case "webcam":
         return <WebcamCard element={element} onUpdate={onUpdate} />
       case "gif":

@@ -99,6 +99,7 @@ export interface PromptElement extends BaseElement {
   content: string
   isRunning?: boolean
   outputType?: "text" | "image"
+  imageStyle?: "realistic" | "cartoon" | "anime" | "watercolor" | "oil-painting" | "sketch" | "wireframe"
 }
 
 export interface WebcamElement extends BaseElement {

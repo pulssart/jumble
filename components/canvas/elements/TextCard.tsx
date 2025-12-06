@@ -3,16 +3,26 @@
 import React, { useState, useRef, useEffect } from "react"
 import { TextElement } from "@/types/canvas"
 import { useLanguage } from "@/lib/language"
+import { Sparkles, Loader2, FileText, CheckSquare, Image as ImageIcon, Copy, Check } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface TextCardProps {
   element: TextElement
   onUpdate: (element: TextElement) => void
+  onAIAction?: (id: string, content: string, actionType: 'summary-with-action' | 'summary' | 'tasks' | 'image') => void
 }
 
-export function TextCard({ element, onUpdate }: TextCardProps) {
+export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
   const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
   const [content, setContent] = useState(element.content)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [showCopyToast, setShowCopyToast] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isResizing, setIsResizing] = useState(false)
@@ -165,15 +175,57 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
     document.addEventListener("mouseup", handleMouseUp)
   }
 
+  const handleAIActionClick = async (type: 'summary-with-action' | 'summary' | 'tasks' | 'image') => {
+    // Extraire le texte brut du contenu HTML
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = content || ""
+    const textContent = tempDiv.textContent || tempDiv.innerText || ""
+    
+    if (!textContent || textContent.trim().length < 3) {
+      alert(language === "fr" ? "Écrivez quelque chose avant de lancer l'IA !" : "Write something before launching AI!")
+      return
+    }
+    
+    setIsGenerating(true)
+    await onAIAction?.(element.id, textContent, type)
+    setIsGenerating(false)
+  }
+
+  const handleCopy = async () => {
+    // Extraire le texte brut du contenu HTML
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = content || ""
+    const textContent = tempDiv.textContent || tempDiv.innerText || ""
+    
+    if (!textContent || textContent.trim().length === 0) {
+      return
+    }
+    
+    try {
+      await navigator.clipboard.writeText(textContent)
+      setShowCopyToast(true)
+      setTimeout(() => setShowCopyToast(false), 2000)
+    } catch (err) {
+      console.error('Erreur lors de la copie:', err)
+    }
+  }
+
   return (
     <div 
       ref={containerRef}
-      className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border border-gray-200 p-4 relative group`}
+      className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border p-4 relative group ${
+        isGenerating 
+          ? "border-purple-500" 
+          : "border-gray-200"
+      }`}
       style={{
         width: dimensions.width,
         height: dimensions.height,
         // Désactiver la transition pendant le redimensionnement pour plus de fluidité
-        transition: (isEditing || isResizing) ? 'none' : 'width 0.1s, height 0.1s'
+        transition: (isEditing || isResizing) ? 'none' : 'width 0.1s, height 0.1s',
+        ...(isGenerating && {
+          animation: 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+        })
       }}
     >
       {isEditing ? (
@@ -195,9 +247,72 @@ export function TextCard({ element, onUpdate }: TextCardProps) {
             setIsEditing(true)
           }}
           onMouseDown={(e) => e.stopPropagation()}
-          className="cursor-text text-sm text-gray-800 h-full overflow-auto"
+          className="cursor-text text-sm text-gray-800 h-full overflow-auto [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h1]:mt-4 [&_h1]:first:mt-0 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:first:mt-0 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-2 [&_h3]:first:mt-0 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p:leading-relaxed] [&_strong]:font-bold [&_em]:italic [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_ul]:mt-2 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-2 [&_ol]:mt-2 [&_li]:mb-1 [&_li]:leading-relaxed"
           dangerouslySetInnerHTML={{ __html: content || (language === "fr" ? "Cliquez pour éditer..." : "Click to edit...") }}
         />
+      )}
+
+      {/* Boutons Magic IA et Copy */}
+      {!isEditing && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex flex-col gap-2">
+          {onAIAction && (
+            <>
+              {isGenerating ? (
+                <div className="p-1.5 rounded-full bg-white/80 shadow-sm">
+                  <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                </div>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="p-1.5 rounded-full bg-white/50 hover:bg-white/80 text-purple-600 transition-colors shadow-sm"
+                      title={language === "fr" ? "Générer avec l'IA" : "Generate with AI"}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleAIActionClick('summary-with-action')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      {language === "fr" ? "Résume avec plan d'action" : "Summary with action plan"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAIActionClick('summary')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      {language === "fr" ? "Résume" : "Summary"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAIActionClick('tasks')}>
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      {language === "fr" ? "Tâches" : "Tasks"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAIActionClick('image')}>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      {language === "fr" ? "Génère une image" : "Generate an image"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </>
+          )}
+          <button
+            className="p-1.5 rounded-full bg-white/50 hover:bg-white/80 text-gray-700 transition-colors shadow-sm"
+            title={language === "fr" ? "Copier le texte" : "Copy text"}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={handleCopy}
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Toast de confirmation */}
+      {showCopyToast && (
+        <div className="fixed top-4 right-4 z-[9999] bg-black text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top-5 fade-in-0 duration-300">
+          <Check className="w-4 h-4" />
+          <span className="text-sm font-medium">
+            {language === "fr" ? "Texte copié !" : "Text copied!"}
+          </span>
+        </div>
       )}
 
       {/* Poignée de redimensionnement */}
