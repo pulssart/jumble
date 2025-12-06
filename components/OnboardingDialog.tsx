@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language"
+import Logo from "../logo.png"
 
 const ONBOARDING_KEY = "jumble-onboarding-shown-v1"
 
@@ -64,19 +65,16 @@ export function OnboardingDialog() {
           }}
         >
         <div className="flex flex-col items-center text-center">
-          {/* Titre Jumble - #282828, bold, large */}
-          <h1 
-            className="font-bold mb-6"
+          {/* Logo Jumble */}
+          <img
+            src={Logo.src}
+            alt="Jumble"
+            className="mb-6"
             style={{ 
-              color: '#282828',
-              fontSize: '48px',
-              lineHeight: '1.2',
-              fontWeight: 700,
-              letterSpacing: '-0.02em'
+              height: 'auto',
+              maxWidth: '200px'
             }}
-          >
-            Jumble
-          </h1>
+          />
 
           {/* Tagline - #282828, regular, large */}
           <p 
