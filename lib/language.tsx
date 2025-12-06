@@ -14,7 +14,7 @@ const LanguageContext = createContext<LanguageContextValue | undefined>(undefine
 const STORAGE_KEY = "jumble-language-v1"
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("fr")
+  const [language, setLanguageState] = useState<Language>("en")
 
   useEffect(() => {
     if (typeof window === "undefined") return
