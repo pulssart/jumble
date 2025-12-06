@@ -58,7 +58,7 @@ export function OnboardingDialog() {
           {/* Tagline */}
           <p className="text-xl text-gray-700 font-normal">
             {language === "fr" 
-              ? "Organisez vos idées dans un canavs infini"
+              ? "Organisez vos idées dans un canvas infini"
               : "Organize your ideas in an infinite canvas"}
           </p>
 
@@ -74,7 +74,7 @@ export function OnboardingDialog() {
               </p>
               <p className="text-xs text-gray-600 leading-relaxed">
                 {language === "fr"
-                  ? "Coller des URLs, écrivrez des notes, capturez des idées. Chaque élément devient une carte sur votre canvas"
+                  ? "Collez des URLs, écrivez des notes, capturez des idées. Chaque élément devient une carte sur votre canvas"
                   : "Paste URLs, write notes, capture ideas. Each element becomes a card on your canvas"}
               </p>
             </div>
@@ -104,8 +104,8 @@ export function OnboardingDialog() {
               </p>
               <p className="text-xs text-gray-600 leading-relaxed">
                 {language === "fr"
-                  ? "Utilisez le zoom et le déplacement pour passer du détails à la vision d'ensemble en un gest"
-                  : "Use zoom and movement to go from details to the overview in one gesture"}
+                  ? "Utilisez le zoom et le déplacement pour passer des détails à la vision d'ensemble en un geste"
+                  : "Use zoom and pan to switch from details to the big picture in one gesture"}
               </p>
             </div>
           </div>
