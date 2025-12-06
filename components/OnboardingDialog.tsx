@@ -48,61 +48,85 @@ export function OnboardingDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-5xl border-0 bg-white p-16 shadow-none">
-        <div className="flex flex-col items-center text-center space-y-6">
+      <DialogContent className="max-w-6xl border-0 bg-white p-16 shadow-none">
+        <div className="flex flex-col items-center text-center space-y-8">
           {/* Titre Jumble */}
           <h1 className="text-6xl font-bold text-gray-900 tracking-tight">
             Jumble
           </h1>
 
           {/* Tagline */}
-          <p className="text-xl text-gray-700 font-normal">
+          <p className="text-xl font-bold text-gray-900">
             {language === "fr" 
               ? "Organisez vos idées dans un canvas infini"
               : "Organize your ideas in an infinite canvas"}
           </p>
 
-          {/* 3 Cartes horizontales */}
-          <div className="grid w-full grid-cols-3 gap-6 mt-10">
-            {/* Carte 1: DÉPOSEZ */}
-            <div className="bg-gray-100 rounded-xl p-6 shadow-md">
-              <p className="text-sm font-semibold text-gray-900 mb-2">
+          {/* 3 Cartes horizontales avec rotation et chevauchement */}
+          <div className="relative w-full flex items-center justify-center mt-12 mb-8" style={{ height: '300px' }}>
+            {/* Carte 1: DÉPOSEZ (gauche, légèrement inclinée vers la droite) */}
+            <div 
+              className="absolute bg-white rounded-xl p-6 shadow-md text-left"
+              style={{
+                width: '300px',
+                left: '50%',
+                transform: 'translateX(-420px) rotate(-3deg)',
+                zIndex: 1,
+              }}
+            >
+              <p className="text-sm font-normal text-gray-900 mb-2">
                 {language === "fr" ? "1. DÉPOSEZ" : "1. DEPOSIT"}
               </p>
-              <p className="text-sm font-medium text-gray-800 mb-3">
+              <p className="text-sm font-bold text-gray-900 mb-3">
                 {language === "fr" ? "Ajoutez des cartes" : "Add cards"}
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-gray-600 leading-relaxed font-normal">
                 {language === "fr"
                   ? "Collez des URLs, écrivez des notes, capturez des idées. Chaque élément devient une carte sur votre canvas"
                   : "Paste URLs, write notes, capture ideas. Each element becomes a card on your canvas"}
               </p>
             </div>
 
-            {/* Carte 2: ORDONNEZ */}
-            <div className="bg-gray-100 rounded-xl p-6 shadow-md">
-              <p className="text-sm font-semibold text-gray-900 mb-2">
+            {/* Carte 2: ORDONNEZ (centre, au-dessus, légèrement inclinée) */}
+            <div 
+              className="absolute bg-white rounded-xl p-6 shadow-lg text-left"
+              style={{
+                width: '300px',
+                left: '50%',
+                transform: 'translateX(-50%) rotate(1deg) translateY(-10px)',
+                zIndex: 3,
+              }}
+            >
+              <p className="text-sm font-normal text-gray-900 mb-2">
                 {language === "fr" ? "2. ORDONNEZ" : "2. ORGANIZE"}
               </p>
-              <p className="text-sm font-medium text-gray-800 mb-3">
+              <p className="text-sm font-bold text-gray-900 mb-3">
                 {language === "fr" ? "Déplacer dans l'espace" : "Move in space"}
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-gray-600 leading-relaxed font-normal">
                 {language === "fr"
                   ? "Organisez vos cartes librement, par zones, par projets ou par humeurs. Aucune structure rigide ne vous limite."
                   : "Organize your cards freely, by zones, by projects or by moods. No rigid structure limits you."}
               </p>
             </div>
 
-            {/* Carte 3: NAVIGUEZ */}
-            <div className="bg-gray-100 rounded-xl p-6 shadow-md">
-              <p className="text-sm font-semibold text-gray-900 mb-2">
+            {/* Carte 3: NAVIGUEZ (droite, légèrement inclinée vers la gauche) */}
+            <div 
+              className="absolute bg-white rounded-xl p-6 shadow-md text-left"
+              style={{
+                width: '300px',
+                left: '50%',
+                transform: 'translateX(120px) rotate(3deg)',
+                zIndex: 2,
+              }}
+            >
+              <p className="text-sm font-normal text-gray-900 mb-2">
                 {language === "fr" ? "3. NAVIGUEZ" : "3. NAVIGATE"}
               </p>
-              <p className="text-sm font-medium text-gray-800 mb-3">
+              <p className="text-sm font-bold text-gray-900 mb-3">
                 {language === "fr" ? "Zoomez dans vos idées" : "Zoom into your ideas"}
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-gray-600 leading-relaxed font-normal">
                 {language === "fr"
                   ? "Utilisez le zoom et le déplacement pour passer des détails à la vision d'ensemble en un geste"
                   : "Use zoom and pan to switch from details to the big picture in one gesture"}
@@ -111,14 +135,14 @@ export function OnboardingDialog() {
           </div>
 
           {/* Disclaimer */}
-          <p className="text-sm text-gray-600 mt-6">
+          <p className="text-sm text-gray-500 italic mt-8">
             {language === "fr" ? "* c'est gratuit pour le moment" : "* it's free for now"}
           </p>
 
           {/* Bouton */}
           <Button
             onClick={handleClose}
-            className="w-full max-w-lg bg-black text-white hover:bg-gray-900 rounded-xl py-4 text-base font-medium mt-6"
+            className="w-full max-w-lg bg-black text-white hover:bg-gray-900 rounded-xl py-4 text-base font-bold mt-6"
           >
             {language === "fr" ? "Commencer sur le canvas" : "Start on the canvas"}
           </Button>
