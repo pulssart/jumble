@@ -1,10 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language"
 
@@ -47,86 +45,194 @@ export function OnboardingDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-6xl border-0 bg-white p-16 shadow-none">
-        <div className="flex flex-col items-center text-center space-y-8">
-          {/* Titre Jumble */}
-          <h1 className="text-6xl font-bold text-gray-900 tracking-tight">
+    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+      <DialogPrimitive.Portal>
+        {/* Overlay personnalisé avec background Figma #F7F7F7 */}
+        <DialogPrimitive.Overlay
+          className="fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          style={{ backgroundColor: '#F7F7F7' }}
+        />
+        {/* Content */}
+        <DialogPrimitive.Content
+          className={cn(
+            "fixed left-[50%] top-[50%] z-50 w-full max-w-5xl translate-x-[-50%] translate-y-[-50%] border-0 bg-white p-16 shadow-lg rounded-[12px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
+          )}
+          style={{ 
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+          }}
+        >
+        <div className="flex flex-col items-center text-center">
+          {/* Titre Jumble - #282828, bold, large */}
+          <h1 
+            className="font-bold mb-6"
+            style={{ 
+              color: '#282828',
+              fontSize: '48px',
+              lineHeight: '1.2',
+              fontWeight: 700,
+              letterSpacing: '-0.02em'
+            }}
+          >
             Jumble
           </h1>
 
-          {/* Tagline */}
-          <p className="text-xl font-bold text-gray-900">
+          {/* Tagline - #282828, regular, large */}
+          <p 
+            className="mb-12"
+            style={{ 
+              color: '#282828',
+              fontSize: '20px',
+              lineHeight: '1.5',
+              fontWeight: 400
+            }}
+          >
             {language === "fr" 
               ? "Organisez vos idées dans un canvas infini"
               : "Organize your ideas in an infinite canvas"}
           </p>
 
-          {/* 3 Cartes horizontales avec rotation et chevauchement */}
-          <div className="relative w-full flex items-center justify-center mt-12 mb-8" style={{ height: '300px' }}>
-            {/* Carte 1: DÉPOSEZ (gauche, légèrement inclinée vers la droite) */}
+          {/* 3 Cartes horizontales avec rotation légère */}
+          <div className="grid w-full grid-cols-3 gap-6 mb-10">
+            {/* Carte 1: DÉPOSEZ */}
             <div 
-              className="absolute bg-white rounded-xl p-6 shadow-md text-left"
-              style={{
-                width: '300px',
-                left: '50%',
-                transform: 'translateX(-420px) rotate(-3deg)',
-                zIndex: 1,
+              className="bg-white rounded-[6px] p-6 shadow-md"
+              style={{ 
+                backgroundColor: '#FFFFFF',
+                borderRadius: '6px',
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                transform: 'rotate(2deg)',
+                padding: '24px'
               }}
             >
-              <p className="text-sm font-normal text-gray-900 mb-2">
+              <p 
+                className="mb-2"
+                style={{ 
+                  color: '#808080',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  fontWeight: 400
+                }}
+              >
                 {language === "fr" ? "1. DÉPOSEZ" : "1. DEPOSIT"}
               </p>
-              <p className="text-sm font-bold text-gray-900 mb-3">
+              <p 
+                className="mb-3 font-bold"
+                style={{ 
+                  color: '#282828',
+                  fontSize: '16px',
+                  lineHeight: '1.5',
+                  fontWeight: 700
+                }}
+              >
                 {language === "fr" ? "Ajoutez des cartes" : "Add cards"}
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed font-normal">
+              <p 
+                className="leading-relaxed"
+                style={{ 
+                  color: '#5B5B5B',
+                  fontSize: '13px',
+                  lineHeight: '1.6',
+                  fontWeight: 400
+                }}
+              >
                 {language === "fr"
                   ? "Collez des URLs, écrivez des notes, capturez des idées. Chaque élément devient une carte sur votre canvas"
                   : "Paste URLs, write notes, capture ideas. Each element becomes a card on your canvas"}
               </p>
             </div>
 
-            {/* Carte 2: ORDONNEZ (centre, au-dessus, légèrement inclinée) */}
+            {/* Carte 2: ORDONNEZ */}
             <div 
-              className="absolute bg-white rounded-xl p-6 shadow-lg text-left"
-              style={{
-                width: '300px',
-                left: '50%',
-                transform: 'translateX(-50%) rotate(1deg) translateY(-10px)',
-                zIndex: 3,
+              className="bg-white rounded-[6px] p-6 shadow-md"
+              style={{ 
+                backgroundColor: '#FFFFFF',
+                borderRadius: '6px',
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                transform: 'rotate(-1deg)',
+                padding: '24px'
               }}
             >
-              <p className="text-sm font-normal text-gray-900 mb-2">
-                {language === "fr" ? "2. ORDONNEZ" : "2. ORGANIZE"}
+              <p 
+                className="mb-2"
+                style={{ 
+                  color: '#808080',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  fontWeight: 400
+                }}
+              >
+                {language === "fr" ? "2. ORDONNEZ" : "2. ARRANGE"}
               </p>
-              <p className="text-sm font-bold text-gray-900 mb-3">
+              <p 
+                className="mb-3 font-bold"
+                style={{ 
+                  color: '#282828',
+                  fontSize: '16px',
+                  lineHeight: '1.5',
+                  fontWeight: 700
+                }}
+              >
                 {language === "fr" ? "Déplacer dans l'espace" : "Move in space"}
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed font-normal">
+              <p 
+                className="leading-relaxed"
+                style={{ 
+                  color: '#5B5B5B',
+                  fontSize: '13px',
+                  lineHeight: '1.6',
+                  fontWeight: 400
+                }}
+              >
                 {language === "fr"
                   ? "Organisez vos cartes librement, par zones, par projets ou par humeurs. Aucune structure rigide ne vous limite."
                   : "Organize your cards freely, by zones, by projects or by moods. No rigid structure limits you."}
               </p>
             </div>
 
-            {/* Carte 3: NAVIGUEZ (droite, légèrement inclinée vers la gauche) */}
+            {/* Carte 3: NAVIGUEZ */}
             <div 
-              className="absolute bg-white rounded-xl p-6 shadow-md text-left"
-              style={{
-                width: '300px',
-                left: '50%',
-                transform: 'translateX(120px) rotate(3deg)',
-                zIndex: 2,
+              className="bg-white rounded-[6px] p-6 shadow-md"
+              style={{ 
+                backgroundColor: '#FFFFFF',
+                borderRadius: '6px',
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                transform: 'rotate(1.5deg)',
+                padding: '24px'
               }}
             >
-              <p className="text-sm font-normal text-gray-900 mb-2">
+              <p 
+                className="mb-2"
+                style={{ 
+                  color: '#808080',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  fontWeight: 400
+                }}
+              >
                 {language === "fr" ? "3. NAVIGUEZ" : "3. NAVIGATE"}
               </p>
-              <p className="text-sm font-bold text-gray-900 mb-3">
+              <p 
+                className="mb-3 font-bold"
+                style={{ 
+                  color: '#282828',
+                  fontSize: '16px',
+                  lineHeight: '1.5',
+                  fontWeight: 700
+                }}
+              >
                 {language === "fr" ? "Zoomez dans vos idées" : "Zoom into your ideas"}
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed font-normal">
+              <p 
+                className="leading-relaxed"
+                style={{ 
+                  color: '#5B5B5B',
+                  fontSize: '13px',
+                  lineHeight: '1.6',
+                  fontWeight: 400
+                }}
+              >
                 {language === "fr"
                   ? "Utilisez le zoom et le déplacement pour passer des détails à la vision d'ensemble en un geste"
                   : "Use zoom and pan to switch from details to the big picture in one gesture"}
@@ -134,20 +240,40 @@ export function OnboardingDialog() {
             </div>
           </div>
 
-          {/* Disclaimer */}
-          <p className="text-sm text-gray-500 italic mt-8">
+          {/* Disclaimer - #5B5B5B, italic, very small */}
+          <p 
+            className="mb-8 italic"
+            style={{ 
+              color: '#5B5B5B',
+              fontSize: '12px',
+              lineHeight: '1.5',
+              fontWeight: 400,
+              fontStyle: 'italic'
+            }}
+          >
             {language === "fr" ? "* c'est gratuit pour le moment" : "* it's free for now"}
           </p>
 
-          {/* Bouton */}
+          {/* Bouton - #000000 background, #FFFFFF text, bold, rounded 8px */}
           <Button
             onClick={handleClose}
-            className="w-full max-w-lg bg-black text-white hover:bg-gray-900 rounded-xl py-4 text-base font-bold mt-6"
+            className="w-full max-w-lg py-4 text-base font-bold rounded-[8px]"
+            style={{ 
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
+              fontSize: '16px',
+              lineHeight: '1.5',
+              fontWeight: 700,
+              borderRadius: '8px',
+              padding: '16px 32px',
+              border: 'none'
+            }}
           >
             {language === "fr" ? "Commencer sur le canvas" : "Start on the canvas"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
 }
