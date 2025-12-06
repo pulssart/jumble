@@ -69,7 +69,7 @@ export function InfiniteCanvas() {
   const lastMousePos = useRef({ x: 0, y: 0 })
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Refs pour le backup périodique et autres usages (évite de recréer l'intervalle à chaque changement)
+  // Refs pour le backup avant fermeture et autres usages
   const elementsRef = useRef(elements)
   const scaleRef = useRef(scale)
   const offsetRef = useRef(canvasOffset)
@@ -442,7 +442,7 @@ export function InfiniteCanvas() {
     }
   }, [elements, canvasOffset, scale, bgColor, currentSpaceId, user?.id, spaces])
 
-  // Mettre à jour les refs quand les valeurs changent (pour le backup périodique)
+  // Mettre à jour les refs quand les valeurs changent (pour le backup avant fermeture)
   useEffect(() => {
     elementsRef.current = elements
     scaleRef.current = scale
@@ -452,49 +452,10 @@ export function InfiniteCanvas() {
     currentSpaceIdRef.current = currentSpaceId
   }, [elements, scale, canvasOffset, bgColor, spaces, currentSpaceId])
 
-  // Backup périodique toutes les 2 minutes
-  useEffect(() => {
-    if (!user?.id) return
-
-    console.log("🔄 Démarrage du backup périodique (toutes les 2 minutes)")
-
-    const backupInterval = setInterval(async () => {
-      if (isSwitchingRef.current) {
-        console.log("⏸️ Backup ignoré : changement de space en cours")
-        return
-      }
-      
-      const currentSpace = currentSpaceIdRef.current
-      if (!currentSpace || !user?.id) {
-        console.log("⏸️ Backup ignoré : pas de space actif")
-        return
-      }
-
-      try {
-        console.log("💾 Début du backup périodique...")
-        
-        // Sauvegarder l'état courant localement d'abord
-        await saveElements(currentSpace, elementsRef.current)
-        saveCanvasOffset(currentSpace, offsetRef.current)
-        saveCanvasZoom(currentSpace, scaleRef.current)
-        saveCanvasBgColor(currentSpace, bgColorRef.current)
-
-        // Générer le payload de backup complet depuis le stockage local
-        const payload = await generateBackupPayload()
-        
-        // Sauvegarder le backup JSON sur Supabase
-        await saveBackup(user.id, payload.spaces, payload.currentSpaceId, payload.dataBySpace)
-        console.log("✅ Backup JSON sauvegardé avec succès à", new Date().toLocaleTimeString())
-      } catch (error) {
-        console.error("❌ Erreur backup périodique:", error)
-      }
-    }, 300_000) // toutes les 5 minutes (300 secondes) - réduit la consommation Disk IO
-
-    return () => {
-      console.log("🛑 Arrêt du backup périodique")
-      clearInterval(backupInterval)
-    }
-  }, [user?.id]) // Seulement dépendre de user.id pour ne pas recréer l'intervalle
+  // Backup périodique désactivé pour réduire la consommation Disk IO
+  // Le backup se fait uniquement :
+  // - Manuellement via le bouton "Forcer backup"
+  // - Automatiquement avant la fermeture de la page (beforeunload)
 
   // Écouter les messages de l'extension Chrome
   useEffect(() => {
