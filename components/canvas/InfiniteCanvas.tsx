@@ -235,14 +235,8 @@ export function InfiniteCanvas() {
             setCurrentSpaceIdState(defaultSpace.id)
             await loadSpaceData(defaultSpace.id)
             
-            // Sauvegarder immédiatement le backup initial (vide) - ne pas bloquer si ça échoue
-            try {
-              const initialPayload = await generateBackupPayload()
-              await saveBackup(user.id, initialPayload.spaces, initialPayload.currentSpaceId, initialPayload.dataBySpace)
-              console.log("Backup initial créé pour le nouveau compte")
-            } catch (e) {
-              console.warn("Erreur lors de la sauvegarde du backup initial (non bloquant):", e)
-            }
+            // Backup initial automatique désactivé pour réduire Disk IO
+            // Le backup se fait uniquement manuellement via le bouton "Forcer backup"
           } catch (e) {
             console.error("Erreur lors de l'initialisation du compte vide:", e)
           }
@@ -415,24 +409,19 @@ export function InfiniteCanvas() {
     saveCanvasBgColor(currentSpaceId, bgColor)
   }, [bgColor, currentSpaceId])
 
-  // Sauvegarder avant de quitter la page
+  // Sauvegarder localement avant de quitter la page (sans backup Supabase pour réduire Disk IO)
   useEffect(() => {
     if (!user?.id) return
     const handleBeforeUnload = async () => {
       if (currentSpaceId) {
-        // Sauvegarder localement
+        // Sauvegarder uniquement localement (IndexedDB/localStorage)
         saveCanvasOffset(currentSpaceId, canvasOffset)
         saveCanvasZoom(currentSpaceId, scale)
         saveCanvasBgColor(currentSpaceId, bgColor)
         await saveElements(currentSpaceId, elements)
         
-        // Sauvegarder le backup complet sur Supabase
-        try {
-          const payload = await generateBackupPayload()
-          await saveBackup(user.id, payload.spaces, payload.currentSpaceId, payload.dataBySpace)
-        } catch (error) {
-          console.error("Erreur backup avant fermeture:", error)
-        }
+        // Backup Supabase désactivé pour réduire Disk IO
+        // Utilisez le bouton "Forcer backup" pour sauvegarder dans le cloud
       }
     }
 
@@ -442,7 +431,7 @@ export function InfiniteCanvas() {
     }
   }, [elements, canvasOffset, scale, bgColor, currentSpaceId, user?.id, spaces])
 
-  // Mettre à jour les refs quand les valeurs changent (pour le backup avant fermeture)
+  // Mettre à jour les refs quand les valeurs changent (pour la sauvegarde locale avant fermeture)
   useEffect(() => {
     elementsRef.current = elements
     scaleRef.current = scale
