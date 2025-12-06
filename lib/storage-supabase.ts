@@ -359,11 +359,15 @@ export async function saveElements(
   try {
     console.log(`Sauvegarde de ${elements.length} éléments pour space ${spaceId}`)
     
-    // Supprimer tous les éléments existants pour ce space
-    await supabase.from("elements").delete().eq("space_id", spaceId).eq("user_id", userId)
-
     if (elements.length === 0) {
-      console.log("Aucun élément à sauvegarder")
+      // Si aucun élément, supprimer tous les éléments existants
+      await supabase.from("elements").delete().eq("space_id", spaceId).eq("user_id", userId)
+      // Mettre à jour last_modified du space
+      await supabase
+        .from("spaces")
+        .update({ last_modified: Date.now() })
+        .eq("id", spaceId)
+        .eq("user_id", userId)
       return
     }
 
@@ -390,17 +394,44 @@ export async function saveElements(
       }
     })
 
-    // Insérer tous les éléments avec des IDs valides
+    // Convertir en rows
     const rows = updatedElements.map((el) => elementToRow(el, spaceId, userId))
 
-    const { error } = await supabase.from("elements").insert(rows)
+    // Récupérer les IDs des éléments existants pour ce space
+    const { data: existingElements } = await supabase
+      .from("elements")
+      .select("id")
+      .eq("space_id", spaceId)
+      .eq("user_id", userId)
+
+    const existingIds = new Set((existingElements || []).map((e: any) => e.id))
+    const newIds = new Set(rows.map(r => r.id))
+
+    // Supprimer les éléments qui n'existent plus
+    const idsToDelete = Array.from(existingIds).filter(id => !newIds.has(id))
+    if (idsToDelete.length > 0) {
+      await supabase
+        .from("elements")
+        .delete()
+        .eq("space_id", spaceId)
+        .eq("user_id", userId)
+        .in("id", idsToDelete)
+    }
+
+    // Utiliser UPSERT pour insérer/mettre à jour les éléments
+    // Supabase détecte automatiquement la clé primaire (id) pour l'upsert
+    const { error } = await supabase
+      .from("elements")
+      .upsert(rows, {
+        onConflict: "id"
+      })
 
     if (error) {
-      console.error("Erreur insertion éléments:", error)
+      console.error("Erreur upsert éléments:", error)
       throw error
     }
 
-    console.log(`${rows.length} éléments sauvegardés avec succès`)
+    console.log(`${rows.length} éléments sauvegardés avec succès (${idsToDelete.length} supprimés)`)
 
     // Mettre à jour last_modified du space
     await supabase

@@ -382,7 +382,7 @@ export function InfiniteCanvas() {
       if (currentSpaceId) {
         await saveElements(currentSpaceId, elements)
       }
-    }, 500)
+    }, 3000) // Augmenté à 3 secondes pour réduire les écritures
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -396,7 +396,7 @@ export function InfiniteCanvas() {
     if (!currentSpaceId) return
     const timeout = setTimeout(() => {
       saveCanvasOffset(currentSpaceId, canvasOffset)
-    }, 1000)
+    }, 2000) // Augmenté à 2 secondes
     return () => clearTimeout(timeout)
   }, [canvasOffset, currentSpaceId])
 
@@ -405,7 +405,7 @@ export function InfiniteCanvas() {
     if (!currentSpaceId) return
     const timeout = setTimeout(() => {
       saveCanvasZoom(currentSpaceId, scale)
-    }, 1000)
+    }, 2000) // Augmenté à 2 secondes
     return () => clearTimeout(timeout)
   }, [scale, currentSpaceId])
 
@@ -488,7 +488,7 @@ export function InfiniteCanvas() {
       } catch (error) {
         console.error("❌ Erreur backup périodique:", error)
       }
-    }, 120_000) // toutes les 2 minutes (120 secondes)
+    }, 300_000) // toutes les 5 minutes (300 secondes) - réduit la consommation Disk IO
 
     return () => {
       console.log("🛑 Arrêt du backup périodique")
