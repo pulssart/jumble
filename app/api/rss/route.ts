@@ -142,8 +142,8 @@ export async function GET(request: NextRequest) {
       }
       
       // Méthode 7: Extraire de description
-      if (!image && item.description) {
-        const descStr = typeof item.description === 'string' ? item.description : String(item.description)
+      if (!image && (item as any).description) {
+        const descStr = typeof (item as any).description === 'string' ? (item as any).description : String((item as any).description)
         const imgMatch = descStr.match(/<img[^>]+src=["']([^"']+)["']/i)
         if (imgMatch && imgMatch[1]) {
           image = imgMatch[1]
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
         link: item.link || "",
         image: image,
         pubDate: pubDate,
-        description: item.contentSnippet || item.content || "",
+        description: (item as any).contentSnippet || (item as any).content || (item as any).description || "",
       }
     })
 
