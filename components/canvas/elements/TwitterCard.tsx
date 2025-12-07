@@ -5,7 +5,27 @@ import { TwitterElement } from "@/types/canvas"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmbeddedTweet, TweetSkeleton } from "react-tweet"
-import { fetchTweet } from "@/app/actions"
+// Utiliser l'API route au lieu de la server action pour compatibilité Netlify
+async function fetchTweet(tweetId: string) {
+  try {
+    const response = await fetch("/api/tweet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ tweetId }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tweet: ${response.statusText}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching tweet:", error)
+    return null
+  }
+}
 
 interface TwitterCardProps {
   element: TwitterElement

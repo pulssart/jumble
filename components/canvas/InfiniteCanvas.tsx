@@ -2637,19 +2637,19 @@ export function InfiniteCanvas() {
                 <DropdownMenuItem onClick={() => addElement("rss")}>
                   <Rss className="h-4 w-4 mr-2" />
                   {language === "fr" ? "Flux RSS" : "RSS Feed"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("googlemaps")}>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {language === "fr" ? "Google Maps" : "Google Maps"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("link")}>
-                  <LinkIcon className="h-4 w-4 mr-2" />
-                  {language === "fr" ? "Lien Web" : "Web link"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("clock")}>
-                  <Clock className="h-4 w-4 mr-2" />
-                  {language === "fr" ? "Horloge" : "Clock"}
-                </DropdownMenuItem>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addElement("googlemaps")}>
+              <MapPin className="h-4 w-4 mr-2" />
+              {language === "fr" ? "Google Maps" : "Google Maps"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addElement("link")}>
+              <LinkIcon className="h-4 w-4 mr-2" />
+              {language === "fr" ? "Lien Web" : "Web link"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addElement("clock")}>
+              <Clock className="h-4 w-4 mr-2" />
+              {language === "fr" ? "Horloge" : "Clock"}
+            </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </DropdownMenuContent>
