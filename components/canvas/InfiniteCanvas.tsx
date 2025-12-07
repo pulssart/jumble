@@ -1205,14 +1205,18 @@ export function InfiniteCanvas() {
   }, [])
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // Ne pas intercepter les événements si on clique dans un dialog
+    const target = e.target as HTMLElement
+    if (target.closest('[role="dialog"]') || target.closest('[data-radix-portal]')) {
+      return
+    }
+
     if (isPanningMode) {
       isDragging.current = true
       lastMousePos.current = { x: e.clientX, y: e.clientY }
       e.preventDefault()
       return
     }
-
-    const target = e.target as HTMLElement
     
     if (target === canvasRef.current || target.classList.contains("canvas-bg")) {
        canvasRef.current?.focus()
@@ -1919,27 +1923,15 @@ export function InfiniteCanvas() {
             }
             
             console.log("Appel generateImage avec prompt:", imagePrompt)
-            // Pour les images, on utilise toujours OpenAI même si Gemini est sélectionné
-            // car Gemini ne supporte pas la génération d'images
-            const imageProvider = provider === "gemini" ? "openai" : provider
-            const imageApiKey = imageProvider === "openai" ? openAIKeyForImages : apiKey
-            
-            if (imageProvider === "openai" && !imageApiKey) {
-              resultContent = language === "fr" 
-                ? "Erreur : Gemini ne supporte pas la génération d'images. Veuillez configurer une clé API OpenAI dans les paramètres pour générer des images."
-                : "Error: Gemini does not support image generation. Please configure an OpenAI API key in settings to generate images."
-              resultType = "text"
-            } else {
-              const result = await generateImage(imagePrompt, imageApiKey, imageProvider)
-              console.log("Retour generateImage:", result)
+            const result = await generateImage(imagePrompt, apiKey, provider)
+            console.log("Retour generateImage:", result)
 
-              if (result.url) {
-                  resultContent = result.url
-                  resultType = "image"
-              } else {
-                  resultContent = `Erreur lors de la génération de l'image: ${result.error}`
-                  resultType = "text"
-              }
+            if (result.url) {
+                resultContent = result.url
+                resultType = "image"
+            } else {
+                resultContent = `Erreur lors de la génération de l'image: ${result.error}`
+                resultType = "text"
             }
         } else {
             resultContent = await runPrompt(promptElement.content, inputs, apiKey, provider)
@@ -2777,14 +2769,18 @@ export function InfiniteCanvas() {
               <Settings className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogContent 
+            className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto !z-[100]"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold">
                 {language === "fr" ? "Paramètres" : "Settings"}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="py-6 space-y-6">
+            <div className="py-6 space-y-6" onMouseDown={(e) => e.stopPropagation()}>
               <div className="space-y-3">
                 <label className="text-sm font-semibold">
                   {language === "fr" ? "Onboarding" : "Onboarding"}
@@ -2914,7 +2910,18 @@ export function InfiniteCanvas() {
                       placeholder="sk-..."
                       value={openAIKey}
                       onChange={(e) => setOpenAIKey(e.target.value)}
-                      className="w-full"
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.currentTarget.focus()
+                      }}
+                      onFocus={(e) => {
+                        e.stopPropagation()
+                      }}
+                      className="w-full relative z-10 pointer-events-auto"
+                      autoFocus={false}
                     />
                     <p className="text-xs text-gray-500">
                       {language === "fr"
@@ -2933,20 +2940,24 @@ export function InfiniteCanvas() {
                       placeholder="AIza..."
                       value={geminiKey}
                       onChange={(e) => setGeminiKey(e.target.value)}
-                      className="w-full"
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.currentTarget.focus()
+                      }}
+                      onFocus={(e) => {
+                        e.stopPropagation()
+                      }}
+                      className="w-full relative z-10 pointer-events-auto"
+                      autoFocus={false}
                     />
                     <p className="text-xs text-gray-500">
                       {language === "fr"
                         ? "Votre clé est stockée localement dans votre navigateur."
                         : "Your key is stored locally in your browser."}
                     </p>
-                    {aiProvider === "gemini" && (
-                      <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md border border-amber-200">
-                        {language === "fr"
-                          ? "ℹ️ Note : Gemini ne supporte pas la génération d'images. Pour générer des images, configurez également une clé API OpenAI ci-dessus."
-                          : "ℹ️ Note: Gemini does not support image generation. To generate images, also configure an OpenAI API key above."}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>

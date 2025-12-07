@@ -164,12 +164,49 @@ export async function generateImage(
       console.log("Aucune image générée trouvée dans la réponse")
       return { url: null, error: "Aucune donnée d'image dans la réponse" }
     } else {
-      // Gemini ne supporte pas directement la génération d'images comme DALL-E
-      // On utilise OpenAI pour les images même si Gemini est sélectionné pour le texte
-      // Cela nécessite que l'utilisateur ait aussi une clé OpenAI configurée
-      // Pour l'instant, on retourne une erreur et on suggère d'utiliser OpenAI
-      // Note: On pourrait utiliser Imagen de Google via Vertex AI, mais cela nécessite une configuration plus complexe
-      return { url: null, error: "Gemini ne supporte pas la génération d'images. Veuillez utiliser OpenAI pour générer des images, ou basculer vers OpenAI dans les paramètres." }
+      // Gemini 2.0 Flash supporte la génération d'images
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: prompt
+                }]
+              }],
+              generationConfig: {
+                responseMimeType: "image/png"
+              }
+            }),
+          }
+        )
+
+        const data = await response.json()
+        
+        if (data.error) {
+          console.error("Gemini Image Error:", data.error)
+          return { url: null, error: data.error.message || "Erreur de l'API Gemini" }
+        }
+        
+        // Gemini retourne l'image en base64 dans candidates[0].content.parts[0].inlineData
+        if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
+          const base64Data = data.candidates[0].content.parts[0].inlineData.data
+          const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType || "image/png"
+          console.log("Image generated successfully with Gemini")
+          return { url: `data:${mimeType};base64,${base64Data}` }
+        }
+
+        console.log("Aucune image générée trouvée dans la réponse Gemini")
+        return { url: null, error: "Aucune donnée d'image dans la réponse Gemini" }
+      } catch (error: any) {
+        console.error("Erreur Gemini Image:", error)
+        return { url: null, error: error.message || "Erreur réseau ou inconnue" }
+      }
     }
   } catch (error: any) {
     console.error(`Erreur ${provider} Image:`, error)
