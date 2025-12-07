@@ -193,15 +193,6 @@ export function NotionCard({ element, onUpdate }: NotionCardProps) {
         </Button>
       </div>
 
-      <div className="p-2 border-t bg-gray-50 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => setIsEditingLink(true)}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="text-xs text-gray-500 hover:text-gray-700 font-medium"
-        >
-          Modifier le lien
-        </button>
-      </div>
     </div>
   )
 }

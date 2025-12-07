@@ -66,6 +66,11 @@ export interface LinearElement extends BaseElement {
   type: "linear"
   embedUrl: string
   customTitle?: string
+  status?: string
+  priority?: string
+  assignee?: string
+  labels?: string[]
+  description?: string
 }
 
 export interface LinkedinElement extends BaseElement {

@@ -16,21 +16,49 @@ interface LinearCardProps {
 const extractLinearTitle = (url: string): string => {
   try {
     const urlObj = new URL(url)
-    // Ex: /team/issue/ENG-123/fix-login-bug
     const path = urlObj.pathname
-    const parts = path.split("/")
+    const parts = path.split("/").filter(p => p.length > 0)
     
-    // Trouver la partie ID (souvent en majuscules + tiret + chiffres)
+    // Format 1: /team/issue/ENG-123/fix-login-bug
     const idIndex = parts.findIndex(p => /^[A-Z]+-\d+$/.test(p))
-    
     if (idIndex !== -1 && idIndex + 1 < parts.length) {
-      // Si on a ID et titre
       const id = parts[idIndex]
       const titleSlug = parts[idIndex + 1]
-      const title = titleSlug.split("-").join(" ")
+      // Enlever l'ID à la fin si présent (ex: case-manager-stopwatch-6c3050815f28)
+      const cleanSlug = titleSlug.replace(/-\w+$/, '')
+      const title = cleanSlug.split("-").map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(" ")
       return `${id}: ${title}`
     } else if (idIndex !== -1) {
       return `Ticket ${parts[idIndex]}`
+    }
+    
+    // Format 2: /dotfile/project/case-manager-stopwatch-6c3050815f28
+    const projectIndex = parts.findIndex(p => p === "project")
+    if (projectIndex !== -1 && projectIndex + 1 < parts.length) {
+      const projectSlug = parts[projectIndex + 1]
+      // Enlever l'ID à la fin (ex: case-manager-stopwatch-6c3050815f28)
+      const cleanSlug = projectSlug.replace(/-\w+$/, '')
+      const title = cleanSlug.split("-").map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(" ")
+      return title || "Project Linear"
+    }
+    
+    // Format 3: Dernier segment comme titre potentiel
+    if (parts.length > 0) {
+      const lastPart = parts[parts.length - 1]
+      // Si c'est un slug (contient des tirets), le convertir en titre
+      if (lastPart.includes("-") && !/^[A-Z]+-\d+$/.test(lastPart)) {
+        const cleanSlug = lastPart.replace(/-\w+$/, '')
+        const title = cleanSlug.split("-").map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(" ")
+        if (title.length > 0) {
+          return title
+        }
+      }
     }
     
     return "Ticket Linear"
@@ -60,17 +88,65 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
              setTitleValue(extracted)
           }
           
-          // 2. Fetch serveur pour le vrai titre
+          // 2. Fetch serveur pour toutes les données Linear
           try {
-            const meta = await fetchUrlMetadata(element.embedUrl)
-            if (meta?.title) {
-               // Linear titres sont souvent "Title - Linear" ou "ID Title | Linear"
-               const cleanTitle = meta.title.replace(/ - Linear$/, "").replace(/ \| Linear$/, "")
-               onUpdate({ ...element, customTitle: cleanTitle })
-               setTitleValue(cleanTitle)
+            const data = await fetchUrlMetadata(element.embedUrl)
+            if (data) {
+              const updates: Partial<LinearElement> = {}
+              
+              if (data.title && data.title.trim()) {
+                // Nettoyer le titre : enlever "Linear", "| Linear", etc.
+                let cleanTitle = data.title
+                  .replace(/ - Linear$/, "")
+                  .replace(/ \| Linear$/, "")
+                  .replace(/^Linear:?\s*/i, "")
+                  .trim()
+                
+                // Si le titre contient l'ID du ticket (ex: "ENG-123: Title"), le garder
+                // Sinon, essayer d'extraire l'ID de l'URL et l'ajouter
+                if (!cleanTitle.match(/^[A-Z]+-\d+/)) {
+                  const extracted = extractLinearTitle(element.embedUrl)
+                  if (extracted && extracted !== "Ticket Linear") {
+                    // Si extracted contient un ID, on peut l'utiliser comme préfixe
+                    const idMatch = extracted.match(/^([A-Z]+-\d+):/)
+                    if (idMatch && !cleanTitle.includes(idMatch[1])) {
+                      cleanTitle = `${idMatch[1]}: ${cleanTitle}`
+                    }
+                  }
+                }
+                
+                if (cleanTitle) {
+                  updates.customTitle = cleanTitle
+                  setTitleValue(cleanTitle)
+                }
+              }
+              
+              if ('status' in data && data.status) {
+                updates.status = data.status as string
+              }
+              
+              if ('priority' in data && data.priority) {
+                updates.priority = data.priority as string
+              }
+              
+              if ('assignee' in data && data.assignee) {
+                updates.assignee = data.assignee as string
+              }
+              
+              if ('labels' in data && Array.isArray(data.labels) && data.labels.length > 0) {
+                updates.labels = data.labels as string[]
+              }
+              
+              if ('description' in data && data.description) {
+                updates.description = data.description as string
+              }
+              
+              if (Object.keys(updates).length > 0) {
+                onUpdate({ ...element, ...updates })
+              }
             }
           } catch (e) {
-            console.error("Erreur fetch linear title", e)
+            console.error("Erreur fetch linear data", e)
           }
       }
       load()
@@ -177,22 +253,29 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
             <div 
               className="group/title flex items-center justify-center gap-2 cursor-text rounded hover:bg-gray-200/50 py-1 px-2 transition-colors"
               onClick={(e) => {
-                e.stopPropagation() // Empêcher le drag
+                e.stopPropagation()
                 setTitleValue(element.customTitle || extractLinearTitle(element.embedUrl))
                 setIsEditingTitle(true)
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
               <h3 className="font-medium text-gray-900 truncate max-w-[200px]">
-                {element.customTitle || "Ticket Linear"}
+                {element.customTitle || extractLinearTitle(element.embedUrl) || "Ticket Linear"}
               </h3>
               <Edit2 className="w-3 h-3 text-gray-400 opacity-0 group-hover/title:opacity-100" />
             </div>
           )}
 
-          <p className="text-xs text-gray-500 truncate max-w-[250px] mx-auto mt-1">
-            {element.embedUrl}
-          </p>
+          {/* Afficher seulement la description si disponible, sinon l'URL */}
+          {element.description ? (
+            <p className="text-xs text-gray-600 line-clamp-2 mt-2 leading-relaxed px-2">
+              {element.description}
+            </p>
+          ) : (
+            <p className="text-xs text-gray-500 truncate max-w-[250px] mx-auto mt-1">
+              {element.embedUrl}
+            </p>
+          )}
         </div>
         
         <Button 
@@ -205,16 +288,6 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
           <ExternalLink className="w-4 h-4" />
           Ouvrir dans Linear
         </Button>
-      </div>
-
-      <div className="p-2 border-t bg-gray-50 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => setIsEditingLink(true)}
-          className="text-xs text-gray-500 hover:text-gray-700 font-medium"
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          Modifier le lien
-        </button>
       </div>
     </div>
   )
