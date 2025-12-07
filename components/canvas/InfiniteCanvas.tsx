@@ -866,8 +866,19 @@ export function InfiniteCanvas() {
       }
     }
 
-    if (type === "url" || (type === "text" && /^(http|https):\/\/[^ "]+$/.test(text))) {
-      const url = text
+    // Détection améliorée des URLs
+    const isUrl = type === "url" || 
+      (type === "text" && (
+        /^(http|https):\/\/[^\s]+$/i.test(text) ||
+        /^[a-z0-9.-]+\.[a-z]{2,}[^\s]*$/i.test(text)
+      ))
+    
+    if (isUrl) {
+      // Normaliser l'URL si elle n'a pas de protocole
+      let url = text.trim()
+      if (!url.match(/^https?:\/\//i)) {
+        url = "https://" + url
+      }
       const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|live|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
       const youtubeMatch = url.match(youtubeRegex)
       
@@ -929,7 +940,7 @@ export function InfiniteCanvas() {
           embedUrl: url,
         }
       }
-      else if (url.includes("linkedin.com")) {
+      else if (url.toLowerCase().includes("linkedin.com") || url.toLowerCase().includes("www.linkedin.com")) {
         newElement = {
           id: generateId(),
           type: "linkedin",
@@ -938,8 +949,24 @@ export function InfiniteCanvas() {
           embedUrl: url,
         }
       }
-      else if (url.includes("twitter.com") || url.includes("x.com")) {
-        const tweetId = url.split("/status/")[1]?.split("?")[0]
+      else if (url.toLowerCase().includes("twitter.com") || url.toLowerCase().includes("x.com") || url.toLowerCase().includes("www.x.com")) {
+        // Extraire le tweet ID de différentes façons
+        let tweetId: string | null = null
+        
+        // Format standard: /status/1234567890
+        const statusMatch = url.match(/\/status\/(\d+)/i)
+        if (statusMatch) {
+          tweetId = statusMatch[1]
+        }
+        
+        // Format alternatif: /1234567890 (sans /status/)
+        if (!tweetId) {
+          const directMatch = url.match(/(?:twitter\.com|x\.com)\/(\d+)/i)
+          if (directMatch) {
+            tweetId = directMatch[1]
+          }
+        }
+        
         if (tweetId) {
           newElement = {
             id: generateId(),
