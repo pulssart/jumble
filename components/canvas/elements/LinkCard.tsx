@@ -31,7 +31,7 @@ export function LinkCard({ element, onUpdate }: LinkCardProps) {
               ...element,
               title: element.title || metadata.title,
               description: element.description || metadata.description,
-              imageUrl: element.imageUrl || metadata.image,
+              imageUrl: element.imageUrl || metadata.imageUrl || metadata.image,
               favicon: element.favicon || metadata.favicon
             })
             if (!element.title) setTitleValue(metadata.title)

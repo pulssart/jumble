@@ -3,6 +3,19 @@
 import * as cheerio from 'cheerio';
 import { getTweet } from 'react-tweet/api';
 
+export type UrlMetadata = {
+  title: string;
+  description: string;
+  image?: string;
+  imageUrl?: string;
+  favicon?: string;
+  author?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  labels?: string[];
+}
+
 export async function fetchTweet(id: string) {
   try {
     const tweet = await getTweet(id);
@@ -13,7 +26,7 @@ export async function fetchTweet(id: string) {
   }
 }
 
-export async function fetchLinearData(url: string) {
+export async function fetchLinearData(url: string): Promise<UrlMetadata | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -136,7 +149,7 @@ export async function fetchLinearData(url: string) {
   }
 }
 
-export async function fetchUrlMetadata(url: string) {
+export async function fetchUrlMetadata(url: string): Promise<UrlMetadata | null> {
   try {
     // Si c'est une URL Linear, utiliser la fonction spécialisée
     if (url.includes('linear.app')) {
@@ -214,7 +227,7 @@ export async function fetchUrlMetadata(url: string) {
         favicon = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=128`
     }
 
-    return { title, description, image, favicon, author };
+    return { title, description, image, imageUrl: image, favicon, author };
   } catch (error) {
     console.error("Erreur metadata:", error);
     return null;
