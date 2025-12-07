@@ -16,7 +16,7 @@ async function callOpenAI(messages: any[], apiKey: string, model: string = "gpt-
   return response.json()
 }
 
-async function callGemini(prompt: string, apiKey: string, model: string = "gemini-pro"): Promise<any> {
+async function callGemini(prompt: string, apiKey: string, model: string = "gemini-2.5-flash"): Promise<any> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
@@ -164,10 +164,10 @@ export async function generateImage(
       console.log("Aucune image générée trouvée dans la réponse")
       return { url: null, error: "Aucune donnée d'image dans la réponse" }
     } else {
-      // Gemini 2.0 Flash supporte la génération d'images
+      // Gemini 2.5 Flash Image (Nano Banana) supporte la génération d'images
       try {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
           {
             method: "POST",
             headers: {
@@ -178,10 +178,7 @@ export async function generateImage(
                 parts: [{
                   text: prompt
                 }]
-              }],
-              generationConfig: {
-                responseMimeType: "image/png"
-              }
+              }]
             }),
           }
         )
@@ -193,12 +190,15 @@ export async function generateImage(
           return { url: null, error: data.error.message || "Erreur de l'API Gemini" }
         }
         
-        // Gemini retourne l'image en base64 dans candidates[0].content.parts[0].inlineData
-        if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
-          const base64Data = data.candidates[0].content.parts[0].inlineData.data
-          const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType || "image/png"
-          console.log("Image generated successfully with Gemini")
-          return { url: `data:${mimeType};base64,${base64Data}` }
+        // Gemini retourne l'image en base64 dans candidates[0].content.parts[].inlineData
+        const parts = data.candidates?.[0]?.content?.parts || []
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            const base64Data = part.inlineData.data
+            const mimeType = part.inlineData.mimeType || "image/png"
+            console.log("Image generated successfully with Gemini")
+            return { url: `data:${mimeType};base64,${base64Data}` }
+          }
         }
 
         console.log("Aucune image générée trouvée dans la réponse Gemini")
@@ -315,7 +315,7 @@ export async function runPrompt(
       
       promptText += "\n---\nRÉSULTAT :"
       
-      const data = await callGemini(promptText, apiKey, "gemini-pro")
+      const data = await callGemini(promptText, apiKey, "gemini-2.5-flash")
       
       if (data.error) {
         console.error("Gemini Error:", data.error)
