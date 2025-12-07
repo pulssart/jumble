@@ -3005,11 +3005,18 @@ export function InfiniteCanvas() {
                     <Cloud className="h-4 w-4 mr-2" />
                     {language === "fr" ? "Forcer le backup maintenant" : "Force backup now"}
                   </Button>
-                  <p className="text-xs text-gray-500">
-                    {language === "fr"
-                      ? "Sauvegarde manuelle de votre Jumble dans le cloud. Le backup automatique se fait toutes les 2 minutes."
-                      : "Manual backup of your Jumble to the cloud. Automatic backup runs every 2 minutes."}
-                  </p>
+                    <p className="text-xs text-gray-500">
+                      {language === "fr"
+                        ? "Sauvegarde manuelle de votre Jumble dans le cloud."
+                        : "Manual backup of your Jumble to the cloud."}
+                    </p>
+                    {lastBackupDate && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        {language === "fr"
+                          ? `Dernière sauvegarde: ${lastBackupDate.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+                          : `Last backup: ${lastBackupDate.toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
+                      </p>
+                    )}
                 </div>
               )}
 
@@ -3024,7 +3031,7 @@ export function InfiniteCanvas() {
                 )}
                 <Button 
                   variant="outline" 
-                  className="w-full" 
+                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-600" 
                   onClick={signOut}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
