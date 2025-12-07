@@ -16,7 +16,7 @@ import {
   saveCanvasBgColor, loadCanvasBgColor,
   setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud, Loader2 } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud, Loader2, CloudSun, TrendingUp, Coins, Rss } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import Logo from "../../logo.png"
@@ -820,6 +823,10 @@ export function InfiniteCanvas() {
       ...(type === "clock" && { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, isAnalog: false, showSeconds: false, is24Hour: true }),
       ...(type === "applemusic" && { url: "" }),
       ...(type === "googlemaps" && { url: "" }),
+      ...(type === "weather" && {}),
+      ...(type === "stock" && { symbol: "AAPL" }),
+      ...(type === "crypto" && { symbol: "BTC", coinId: "bitcoin" }),
+      ...(type === "rss" && { feedUrl: "https://www.theverge.com/rss/index.xml" }),
     } as CanvasElement
     
     const updatedElements = [...elements, newElement]
@@ -1836,12 +1843,12 @@ export function InfiniteCanvas() {
            ? `Veuillez configurer votre clé API ${aiProvider === "openai" ? "OpenAI" : "Gemini"}.`
            : `Please configure your ${aiProvider === "openai" ? "OpenAI" : "Gemini"} API key.`
        )
-       return
+        return
      }
 
      // Marquer comme en cours d'exécution
      setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: true } : el))
-     
+
      // Utiliser requestAnimationFrame pour s'assurer que React a mis à jour le state
      requestAnimationFrame(() => {
        // Récupérer la version la plus récente après la mise à jour
@@ -1850,18 +1857,18 @@ export function InfiniteCanvas() {
          if (!promptElement) return current
 
          const inputElements = current.filter(el => el.connections?.includes(promptId))
-         
-         const inputs = inputElements.map(el => {
-            let content = ""
-            if (el.type === 'text') content = (el as any).content
-            if (el.type === 'postit') content = (el as any).content
-            if (el.type === 'task') content = (el as any).title
-            if (el.type === 'notion') content = `Page Notion: ${(el as any).embedUrl}`
-            if (el.type === 'linear') content = `Ticket Linear: ${(el as any).embedUrl}`
-            if (el.type === 'link') content = `Lien: ${(el as any).url}`
-            if (el.type === 'image') content = (el as any).src
-            return { type: el.type, content }
-         }).filter(i => i.content)
+     
+     const inputs = inputElements.map(el => {
+        let content = ""
+        if (el.type === 'text') content = (el as any).content
+        if (el.type === 'postit') content = (el as any).content
+        if (el.type === 'task') content = (el as any).title
+        if (el.type === 'notion') content = `Page Notion: ${(el as any).embedUrl}`
+        if (el.type === 'linear') content = `Ticket Linear: ${(el as any).embedUrl}`
+        if (el.type === 'link') content = `Lien: ${(el as any).url}`
+        if (el.type === 'image') content = (el as any).src
+        return { type: el.type, content }
+     }).filter(i => i.content)
 
          // Si pas de prompt et pas d'inputs, on ne peut pas exécuter
          if (!promptElement.content && inputs.length === 0) {
@@ -2462,6 +2469,21 @@ export function InfiniteCanvas() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="w-56 my-2">
+            {/* Prompt IA - seul */}
+            <DropdownMenuItem onClick={() => addElement("prompt")}>
+              <Zap className="h-4 w-4 mr-2 text-yellow-500" />
+              {language === "fr" ? "Prompt IA" : "AI Prompt"}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {/* Catégorie : Texte & Notes */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Type className="h-4 w-4 mr-2" />
+                {language === "fr" ? "Texte & Notes" : "Text & Notes"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
             <DropdownMenuItem onClick={() => addElement("text")}>
               <Type className="h-4 w-4 mr-2" />
               {language === "fr" ? "Texte" : "Text"}
@@ -2474,10 +2496,16 @@ export function InfiniteCanvas() {
               <StickyNote className="h-4 w-4 mr-2" />
               {language === "fr" ? "Post-it" : "Sticky note"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("prompt")}>
-              <Zap className="h-4 w-4 mr-2 text-yellow-500" />
-              {language === "fr" ? "Prompt IA" : "AI Prompt"}
-            </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* Catégorie : Média */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Video className="h-4 w-4 mr-2" />
+                {language === "fr" ? "Média" : "Media"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
             <DropdownMenuItem onClick={() => addElement("youtube")}>
               <Youtube className="h-4 w-4 mr-2" />
               YouTube
@@ -2490,6 +2518,28 @@ export function InfiniteCanvas() {
               <Music className="h-4 w-4 mr-2 text-red-500" />
               Apple Music
             </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("image")}>
+                  <Image className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Image" : "Image"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("gif")}>
+                  <Image className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "GIF animé" : "Animated GIF"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("webcam")}>
+                  <Video className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Webcam" : "Webcam"}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* Catégorie : Design & Outils */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                {language === "fr" ? "Design & Outils" : "Design & Tools"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
             <DropdownMenuItem onClick={() => addElement("figma")}>
               <Figma className="h-4 w-4 mr-2" />
               Figma
@@ -2502,6 +2552,16 @@ export function InfiniteCanvas() {
               <LayoutList className="h-4 w-4 mr-2" />
               Linear
             </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* Catégorie : Réseaux sociaux */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Linkedin className="h-4 w-4 mr-2" />
+                {language === "fr" ? "Réseaux sociaux" : "Social Media"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
             <DropdownMenuItem onClick={() => addElement("linkedin")}>
               <Linkedin className="h-4 w-4 mr-2" />
               LinkedIn
@@ -2514,30 +2574,46 @@ export function InfiniteCanvas() {
               <Instagram className="h-4 w-4 mr-2" />
               Instagram
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("googlemaps")}>
-              <MapPin className="h-4 w-4 mr-2" />
-              {language === "fr" ? "Google Maps" : "Google Maps"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("link")}>
-              <LinkIcon className="h-4 w-4 mr-2" />
-              {language === "fr" ? "Lien Web" : "Web link"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("webcam")}>
-              <Video className="h-4 w-4 mr-2" />
-              {language === "fr" ? "Webcam" : "Webcam"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("gif")}>
-              <Image className="h-4 w-4 mr-2" />
-              {language === "fr" ? "GIF animé" : "Animated GIF"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("image")}>
-              <Image className="h-4 w-4 mr-2" />
-              {language === "fr" ? "Image" : "Image"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("clock")}>
-              <Clock className="h-4 w-4 mr-2" />
-              {language === "fr" ? "Horloge" : "Clock"}
-            </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* Catégorie : Autres */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <LinkIcon className="h-4 w-4 mr-2" />
+                {language === "fr" ? "Autres" : "Others"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => addElement("weather")}>
+                  <CloudSun className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Météo" : "Weather"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("stock")}>
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Bourse" : "Stock"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("crypto")}>
+                  <Coins className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Crypto" : "Crypto"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("rss")}>
+                  <Rss className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Flux RSS" : "RSS Feed"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("googlemaps")}>
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Google Maps" : "Google Maps"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("link")}>
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Lien Web" : "Web link"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => addElement("clock")}>
+                  <Clock className="h-4 w-4 mr-2" />
+                  {language === "fr" ? "Horloge" : "Clock"}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -2900,16 +2976,16 @@ export function InfiniteCanvas() {
                 </div>
 
                 {aiProvider === "openai" ? (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      <Key className="h-4 w-4" />
-                      {language === "fr" ? "Clé API OpenAI" : "OpenAI API key"}
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="sk-..."
-                      value={openAIKey}
-                      onChange={(e) => setOpenAIKey(e.target.value)}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  {language === "fr" ? "Clé API OpenAI" : "OpenAI API key"}
+                </label>
+                <Input
+                  type="password"
+                  placeholder="sk-..."
+                  value={openAIKey}
+                  onChange={(e) => setOpenAIKey(e.target.value)}
                       onMouseDown={(e) => {
                         e.stopPropagation()
                       }}
@@ -2922,12 +2998,12 @@ export function InfiniteCanvas() {
                       }}
                       className="w-full relative z-10 pointer-events-auto"
                       autoFocus={false}
-                    />
-                    <p className="text-xs text-gray-500">
-                      {language === "fr"
-                        ? "Votre clé est stockée localement dans votre navigateur."
-                        : "Your key is stored locally in your browser."}
-                    </p>
+                />
+                <p className="text-xs text-gray-500">
+                  {language === "fr"
+                    ? "Votre clé est stockée localement dans votre navigateur."
+                    : "Your key is stored locally in your browser."}
+                </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -3005,8 +3081,8 @@ export function InfiniteCanvas() {
                     <Cloud className="h-4 w-4 mr-2" />
                     {language === "fr" ? "Forcer le backup maintenant" : "Force backup now"}
                   </Button>
-                    <p className="text-xs text-gray-500">
-                      {language === "fr"
+                  <p className="text-xs text-gray-500">
+                    {language === "fr"
                         ? "Sauvegarde manuelle de votre Jumble dans le cloud."
                         : "Manual backup of your Jumble to the cloud."}
                     </p>
@@ -3015,7 +3091,7 @@ export function InfiniteCanvas() {
                         {language === "fr"
                           ? `Dernière sauvegarde: ${lastBackupDate.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
                           : `Last backup: ${lastBackupDate.toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
-                      </p>
+                  </p>
                     )}
                 </div>
               )}

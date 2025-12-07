@@ -24,6 +24,10 @@ import { ClockCard } from "./elements/ClockCard"
 import { AppleMusicCard } from "./elements/AppleMusicCard"
 import { InstagramCard } from "./elements/InstagramCard"
 import { GoogleMapsCard } from "./elements/GoogleMapsCard"
+import { WeatherCard } from "./elements/WeatherCard"
+import { StockCard } from "./elements/StockCard"
+import { CryptoCard } from "./elements/CryptoCard"
+import { RSSCard } from "./elements/RSSCard"
 import { X, Copy, Trash2, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -260,6 +264,14 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
         return <InstagramCard element={element} onUpdate={onUpdate} />
       case "googlemaps":
         return <GoogleMapsCard element={element} onUpdate={onUpdate} />
+      case "weather":
+        return <WeatherCard element={element} onUpdate={onUpdate} />
+      case "stock":
+        return <StockCard element={element} onUpdate={onUpdate} />
+      case "crypto":
+        return <CryptoCard element={element} onUpdate={onUpdate} />
+      case "rss":
+        return <RSSCard element={element} onUpdate={onUpdate} />
       default:
         return null
     }

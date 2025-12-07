@@ -1,13 +1,13 @@
 export type AIProvider = "openai" | "gemini"
 
 async function callOpenAI(messages: any[], apiKey: string, model: string = "gpt-4o", temperature: number = 0.7): Promise<any> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
       model,
       messages,
       temperature,
@@ -45,23 +45,23 @@ export async function generateBrainstormingIdeas(
   try {
     if (provider === "openai") {
       const data = await callOpenAI([
-        {
-          role: "system",
-          content: "Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.",
-        },
-        {
-          role: "user",
-          content: `Donne-moi ${count} idées créatives liées à : "${topic}". Format JSON strict: ["idée 1", "idée 2", ...]`,
-        },
+          {
+            role: "system",
+            content: "Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.",
+          },
+          {
+            role: "user",
+            content: `Donne-moi ${count} idées créatives liées à : "${topic}". Format JSON strict: ["idée 1", "idée 2", ...]`,
+          },
       ], apiKey, "gpt-4o", 0.8)
 
-      if (data.error) {
-        console.error("OpenAI Error:", data.error)
-        return []
-      }
-      
-      const content = data.choices[0].message.content
-      const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
+    if (data.error) {
+      console.error("OpenAI Error:", data.error)
+      return []
+    }
+    
+    const content = data.choices[0].message.content
+    const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
       return JSON.parse(cleanContent)
     } else {
       const prompt = `Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.\n\nDonne-moi ${count} idées créatives liées à : "${topic}". Format JSON strict: ["idée 1", "idée 2", ...]`
@@ -74,7 +74,7 @@ export async function generateBrainstormingIdeas(
       
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
       const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
-      return JSON.parse(cleanContent)
+    return JSON.parse(cleanContent)
     }
   } catch (error) {
     console.error(`Erreur ${provider}:`, error)
@@ -90,20 +90,20 @@ export async function generateTasks(
   try {
     if (provider === "openai") {
       const data = await callOpenAI([
-        {
-          role: "system",
-          content: "Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).",
-        },
-        {
-          role: "user",
-          content: `Crée un plan d'action pour : "${topic}". Format JSON strict: { "title": "Titre du plan", "steps": ["étape 1", "étape 2", ...] }`,
-        },
+          {
+            role: "system",
+            content: "Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).",
+          },
+          {
+            role: "user",
+            content: `Crée un plan d'action pour : "${topic}". Format JSON strict: { "title": "Titre du plan", "steps": ["étape 1", "étape 2", ...] }`,
+          },
       ], apiKey)
 
-      if (data.error) return { title: "Erreur", steps: [] }
-      
-      const content = data.choices[0].message.content
-      const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
+    if (data.error) return { title: "Erreur", steps: [] }
+    
+    const content = data.choices[0].message.content
+    const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
       return JSON.parse(cleanContent)
     } else {
       const prompt = `Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).\n\nCrée un plan d'action pour : "${topic}". Format JSON strict: { "title": "Titre du plan", "steps": ["étape 1", "étape 2", ...] }`
@@ -113,7 +113,7 @@ export async function generateTasks(
       
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
       const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
-      return JSON.parse(cleanContent)
+    return JSON.parse(cleanContent)
     }
   } catch (error) {
     console.error(`Erreur ${provider}:`, error)
@@ -128,7 +128,7 @@ export async function generateImage(
 ): Promise<{ url: string | null, error?: string }> {
   try {
     if (provider === "openai") {
-      const body = JSON.stringify({
+    const body = JSON.stringify({
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
@@ -136,33 +136,33 @@ export async function generateImage(
         quality: "standard",
         response_format: "b64_json"
       })
-      
-      console.log("Sending Image Request to OpenAI (Images API):", body)
+    
+    console.log("Sending Image Request to OpenAI (Images API):", body)
 
-      const response = await fetch("https://api.openai.com/v1/images/generations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: body,
-      })
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: body,
+    })
 
-      console.log("OpenAI Image Response Status:", response.status)
-      const data = await response.json()
-      
-      if (data.error) {
-        console.error("OpenAI Image Error:", data.error)
-        return { url: null, error: data.error.message || "Erreur de l'API OpenAI" }
-      }
-      
-      if (data.data && data.data.length > 0 && data.data[0].b64_json) {
+    console.log("OpenAI Image Response Status:", response.status)
+    const data = await response.json()
+    
+    if (data.error) {
+      console.error("OpenAI Image Error:", data.error)
+      return { url: null, error: data.error.message || "Erreur de l'API OpenAI" }
+    }
+    
+    if (data.data && data.data.length > 0 && data.data[0].b64_json) {
         console.log("Image generated successfully")
         return { url: `data:image/png;base64,${data.data[0].b64_json}` }
-      }
+    }
 
-      console.log("Aucune image générée trouvée dans la réponse")
-      return { url: null, error: "Aucune donnée d'image dans la réponse" }
+    console.log("Aucune image générée trouvée dans la réponse")
+    return { url: null, error: "Aucune donnée d'image dans la réponse" }
     } else {
       // Gemini 2.5 Flash Image (Nano Banana) supporte la génération d'images
       try {
@@ -270,37 +270,37 @@ export async function runPrompt(
     })
 
     if (provider === "openai") {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o", // Supporte Vision
-          messages: [
-            {
-              role: "system",
-              content: "Tu es un processeur de données intelligent capable d'analyser du texte et des images. Ta tâche est de traiter les inputs fournis en suivant l'instruction donnée. Si des images sont fournies, considère-les comme des références de STYLE (ambiance, rendu visuel, direction artistique) et non de contenu, sauf instruction contraire explicite.",
-            },
-            {
-              role: "user",
-              content: contentParts,
-            },
-          ],
-          temperature: 0.7,
-          max_completion_tokens: 1000,
-        }),
-      })
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o", // Supporte Vision
+        messages: [
+          {
+            role: "system",
+            content: "Tu es un processeur de données intelligent capable d'analyser du texte et des images. Ta tâche est de traiter les inputs fournis en suivant l'instruction donnée. Si des images sont fournies, considère-les comme des références de STYLE (ambiance, rendu visuel, direction artistique) et non de contenu, sauf instruction contraire explicite.",
+          },
+          {
+            role: "user",
+            content: contentParts,
+          },
+        ],
+        temperature: 0.7,
+        max_completion_tokens: 1000,
+      }),
+    })
 
-      const data = await response.json()
-      
-      if (data.error) {
-        console.error("OpenAI Error:", data.error)
-        return "Erreur API OpenAI: " + data.error.message
-      }
+    const data = await response.json()
+    
+    if (data.error) {
+      console.error("OpenAI Error:", data.error)
+      return "Erreur API OpenAI: " + data.error.message
+    }
 
-      return data.choices[0].message.content || ""
+    return data.choices[0].message.content || ""
     } else {
       // Pour Gemini, on construit un prompt texte simple (Gemini supporte les images mais nécessite une structure différente)
       let promptText = instruction + "\n\nVoici les données d'entrée à traiter:\n"

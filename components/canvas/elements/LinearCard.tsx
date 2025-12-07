@@ -117,7 +117,7 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
                 
                 if (cleanTitle) {
                   updates.customTitle = cleanTitle
-                  setTitleValue(cleanTitle)
+               setTitleValue(cleanTitle)
                 }
               }
               
@@ -272,9 +272,9 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
               {element.description}
             </p>
           ) : (
-            <p className="text-xs text-gray-500 truncate max-w-[250px] mx-auto mt-1">
-              {element.embedUrl}
-            </p>
+          <p className="text-xs text-gray-500 truncate max-w-[250px] mx-auto mt-1">
+            {element.embedUrl}
+          </p>
           )}
         </div>
         

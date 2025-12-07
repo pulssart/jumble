@@ -1,4 +1,4 @@
-export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic" | "instagram" | "googlemaps"
+export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic" | "instagram" | "googlemaps" | "weather" | "stock" | "crypto" | "rss"
 
 export interface Position {
   x: number
@@ -147,6 +147,52 @@ export interface GoogleMapsElement extends BaseElement {
   embedUrl?: string // URL d'embed générée
 }
 
+export interface WeatherElement extends BaseElement {
+  type: "weather"
+  city?: string // Nom de la ville (optionnel, si vide utilise la géolocalisation)
+  temperature?: number
+  description?: string
+  icon?: string
+  humidity?: number
+  windSpeed?: number
+  isLoading?: boolean
+}
+
+export interface StockElement extends BaseElement {
+  type: "stock"
+  symbol?: string // Symbole boursier (ex: AAPL, TSLA, etc.)
+  price?: number
+  change?: number
+  changePercent?: number
+  companyName?: string
+  isLoading?: boolean
+}
+
+export interface CryptoElement extends BaseElement {
+  type: "crypto"
+  symbol?: string // Symbole crypto (ex: BTC, ETH, etc.)
+  coinId?: string // ID CoinGecko (ex: bitcoin, ethereum)
+  price?: number
+  change?: number
+  changePercent?: number
+  coinName?: string
+  isLoading?: boolean
+}
+
+export interface RSSElement extends BaseElement {
+  type: "rss"
+  feedUrl?: string // URL du flux RSS
+  title?: string // Titre de l'article actuel
+  link?: string // Lien de l'article actuel
+  image?: string // Image de l'article actuel
+  siteName?: string // Nom du site
+  pubDate?: string // Date de publication de l'article actuel
+  description?: string // Description de l'article actuel
+  currentArticleIndex?: number // Index de l'article actuellement affiché
+  articlesCount?: number // Nombre total d'articles chargés
+  isLoading?: boolean
+}
+
 export type CanvasElement =
   | ImageElement
   | TextElement
@@ -167,6 +213,10 @@ export type CanvasElement =
   | AppleMusicElement
   | InstagramElement
   | GoogleMapsElement
+  | WeatherElement
+  | StockElement
+  | CryptoElement
+  | RSSElement
 
 export interface Space {
   id: string
