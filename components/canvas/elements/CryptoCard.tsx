@@ -193,7 +193,10 @@ export function CryptoCard({ element, onUpdate }: CryptoCardProps) {
         ...element,
         symbol: cryptoOption.symbol,
         coinId: cryptoOption.coinId,
-        ...data,
+        price: data.price,
+        change: data.change,
+        changePercent: data.changePercent,
+        coinName: data.coinName,
         isLoading: false
       })
       setIsEditingSymbol(false)
@@ -214,8 +217,11 @@ export function CryptoCard({ element, onUpdate }: CryptoCardProps) {
         onUpdate({
           ...element,
           symbol: symbol,
-          coinId: data.coinId,
-          ...data,
+          coinId: data.coinId || undefined,
+          price: data.price,
+          change: data.change,
+          changePercent: data.changePercent,
+          coinName: data.coinName,
           isLoading: false
         })
         setIsEditingSymbol(false)

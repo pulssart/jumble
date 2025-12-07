@@ -2623,7 +2623,15 @@ export function InfiniteCanvas() {
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={zoomOut}>
                 <Minus className="h-4 w-4" />
             </Button>
-            <span className="text-xs font-medium text-gray-500 w-9 text-center select-none">
+            <span 
+              className="text-xs font-medium text-gray-500 w-9 text-center cursor-pointer hover:text-gray-700 transition-colors"
+              onClick={() => {
+                setScale(1)
+                if (currentSpaceId) {
+                  saveCanvasZoom(currentSpaceId, 1)
+                }
+              }}
+            >
                 {Math.round(scale * 100)}%
             </span>
              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={zoomIn}>

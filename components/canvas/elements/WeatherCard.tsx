@@ -220,7 +220,12 @@ export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
         const weather = await fetchWeather(element.city)
         onUpdate({
           ...element,
-          ...weather,
+          city: weather.city || element.city,
+          temperature: weather.temperature,
+          description: weather.description,
+          icon: weather.icon,
+          humidity: weather.humidity,
+          windSpeed: weather.windSpeed,
           isLoading: false
         })
       } else {
@@ -230,7 +235,12 @@ export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
             const weather = await fetchWeather(undefined, position.coords.latitude, position.coords.longitude)
             onUpdate({
               ...element,
-              ...weather,
+              city: weather.city,
+              temperature: weather.temperature,
+              description: weather.description,
+              icon: weather.icon,
+              humidity: weather.humidity,
+              windSpeed: weather.windSpeed,
               isLoading: false
             })
           },
@@ -239,7 +249,12 @@ export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
             const weather = await fetchWeather("Paris")
             onUpdate({
               ...element,
-              ...weather,
+              city: weather.city,
+              temperature: weather.temperature,
+              description: weather.description,
+              icon: weather.icon,
+              humidity: weather.humidity,
+              windSpeed: weather.windSpeed,
               isLoading: false
             })
           }
@@ -275,14 +290,17 @@ export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
     setSelectedCity(city)
     setCityValue(city.displayName)
     setShowSuggestions(false)
-    onUpdate({ ...element, city: city.displayName })
     setIsLoading(true)
     try {
       const weather = await fetchWeather(undefined, city.lat, city.lon)
       onUpdate({
         ...element,
         city: city.displayName,
-        ...weather,
+        temperature: weather.temperature,
+        description: weather.description,
+        icon: weather.icon,
+        humidity: weather.humidity,
+        windSpeed: weather.windSpeed,
         isLoading: false
       })
       setIsEditingCity(false)
@@ -306,7 +324,11 @@ export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
         onUpdate({
           ...element,
           city: cityValue.trim(),
-          ...weather,
+          temperature: weather.temperature,
+          description: weather.description,
+          icon: weather.icon,
+          humidity: weather.humidity,
+          windSpeed: weather.windSpeed,
           isLoading: false
         })
       } catch (error) {
