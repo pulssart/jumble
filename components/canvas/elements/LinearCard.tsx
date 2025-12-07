@@ -5,7 +5,27 @@ import { LinearElement } from "@/types/canvas"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ExternalLink, LayoutList, Edit2 } from "lucide-react"
-import { fetchUrlMetadata } from "@/app/actions"
+// Utiliser l'API route au lieu de la server action pour compatibilité Netlify
+async function fetchUrlMetadata(url: string) {
+  try {
+    const response = await fetch("/api/metadata", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metadata: ${response.statusText}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching metadata:", error)
+    return null
+  }
+}
 
 interface LinearCardProps {
   element: LinearElement
