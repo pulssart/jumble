@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { PostItElement } from "@/types/canvas"
+import { ActionType } from "@/types/action"
 import { GripHorizontal, Sparkles, Loader2, Image as ImageIcon, CheckSquare } from "lucide-react"
 import { useLanguage } from "@/lib/language"
 import {
@@ -14,7 +15,7 @@ import {
 interface PostItCardProps {
   element: PostItElement
   onUpdate: (element: PostItElement) => void
-  onAIAction?: (id: string, content: string, actionType: 'ideas' | 'tasks' | 'image') => void
+  onAIAction?: (id: string, content: string, actionType: ActionType) => void
 }
 
 const colorClasses = {
@@ -97,7 +98,7 @@ export function PostItCard({ element, onUpdate, onAIAction }: PostItCardProps) {
     document.addEventListener("mouseup", handleMouseUp)
   }
 
-  const handleAIActionClick = async (type: 'ideas' | 'tasks' | 'image') => {
+  const handleAIActionClick = async (type: ActionType) => {
     if (!content || content.trim().length < 3) {
       alert(language === "fr" ? "Écrivez quelque chose avant de lancer l'IA !" : "Write something before launching AI!")
       return

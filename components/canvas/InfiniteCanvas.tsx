@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { generateBrainstormingIdeas, generateTasks, generateImage, runPrompt } from "@/lib/ai"
 import { CanvasElement, PromptElement, Space } from "@/types/canvas"
+import { ActionType } from "@/types/action"
 import { CanvasElementComponent } from "./CanvasElement"
 import { 
   saveBackup, loadBackup
@@ -58,7 +59,9 @@ export function InfiniteCanvas() {
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
   const [bgColor, setBgColor] = useState("bg-gray-50")
+  const [aiProvider, setAiProvider] = useState<"openai" | "gemini">("openai")
   const [openAIKey, setOpenAIKey] = useState("")
+  const [geminiKey, setGeminiKey] = useState("")
   const [isKeyLoaded, setIsKeyLoaded] = useState(false)
   const [isElementsLoaded, setIsElementsLoaded] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -261,8 +264,14 @@ export function InfiniteCanvas() {
           }
         }
         
-        const savedKey = localStorage.getItem("space_openai_key")
-        if (savedKey) setOpenAIKey(savedKey)
+        const savedProvider = localStorage.getItem("space_ai_provider") as "openai" | "gemini" | null
+        if (savedProvider === "openai" || savedProvider === "gemini") {
+          setAiProvider(savedProvider)
+        }
+        const savedOpenAIKey = localStorage.getItem("space_openai_key")
+        if (savedOpenAIKey) setOpenAIKey(savedOpenAIKey)
+        const savedGeminiKey = localStorage.getItem("space_gemini_key")
+        if (savedGeminiKey) setGeminiKey(savedGeminiKey)
         console.log("=== Initialisation terminée ===")
       } catch (error) {
         console.error("Erreur initialisation:", error)
@@ -373,15 +382,21 @@ export function InfiniteCanvas() {
     await handleSwitchSpace(newSpaces[0].id)
   }
 
-  // Sauvegarder la clé OpenAI quand elle change
+  // Sauvegarder les clés API et le provider quand ils changent
   useEffect(() => {
     if (!isKeyLoaded) return
+    localStorage.setItem("space_ai_provider", aiProvider)
     if (openAIKey) {
       localStorage.setItem("space_openai_key", openAIKey)
     } else {
       localStorage.removeItem("space_openai_key")
     }
-  }, [openAIKey, isKeyLoaded])
+    if (geminiKey) {
+      localStorage.setItem("space_gemini_key", geminiKey)
+    } else {
+      localStorage.removeItem("space_gemini_key")
+    }
+  }, [aiProvider, openAIKey, geminiKey, isKeyLoaded])
 
   // Sauvegarder les éléments localement avec debounce
   useEffect(() => {
@@ -1431,9 +1446,14 @@ export function InfiniteCanvas() {
     }
   }, [])
 
-  const handleAIAction = async (originId: string, topic: string, actionType: 'ideas' | 'tasks' | 'image' | 'summary-with-action' | 'summary' | 'format') => {
-    if (!openAIKey) {
-      alert("Veuillez d'abord configurer votre clé API OpenAI dans les paramètres.")
+  const handleAIAction = async (originId: string, topic: string, actionType: ActionType) => {
+    const apiKey = aiProvider === "openai" ? openAIKey : geminiKey
+    if (!apiKey) {
+      alert(
+        language === "fr" 
+          ? `Veuillez d'abord configurer votre clé API ${aiProvider === "openai" ? "OpenAI" : "Gemini"} dans les paramètres.`
+          : `Please configure your ${aiProvider === "openai" ? "OpenAI" : "Gemini"} API key in settings first.`
+      )
       return
     }
 
@@ -1454,7 +1474,7 @@ export function InfiniteCanvas() {
           ? "Résume ce contenu et crée un plan d'action détaillé avec les points clés et les prochaines étapes."
           : "Summarize this content and create a detailed action plan with key points and next steps."
         
-        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], openAIKey)
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider)
         const htmlContent = markdownToHtml(resultContent)
         
         const x = originElement.position.x + width + 50
@@ -1480,7 +1500,7 @@ export function InfiniteCanvas() {
           ? "Fais un résumé simple et concis de ce contenu."
           : "Make a simple and concise summary of this content."
         
-        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], openAIKey)
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider)
         const htmlContent = markdownToHtml(resultContent)
         
         const x = originElement.position.x + width + 50
@@ -1502,7 +1522,7 @@ export function InfiniteCanvas() {
       }
 
       if (actionType === 'ideas') {
-        const ideas = await generateBrainstormingIdeas(topic, openAIKey)
+        const ideas = await generateBrainstormingIdeas(topic, apiKey, 5, aiProvider)
         if (ideas.length === 0) return
 
         const newElements = ideas.map((idea, index) => {
@@ -1526,7 +1546,7 @@ export function InfiniteCanvas() {
 
       } else if (actionType === 'tasks') {
         // Pour les TextCard, on utilise generateTasks comme pour PostItCard
-        const result = await generateTasks(topic, openAIKey)
+        const result = await generateTasks(topic, apiKey, aiProvider)
         if (result.steps.length === 0) return
 
         const x = originElement.position.x + width + 50
@@ -1547,7 +1567,7 @@ export function InfiniteCanvas() {
         setElements(prev => [...prev, ...newElements])
 
       } else if (actionType === 'image') {
-        const result = await generateImage(topic, openAIKey)
+        const result = await generateImage(topic, apiKey, aiProvider)
         if (!result.url) {
            if (result.error) alert(`Erreur image: ${result.error}`)
            return
@@ -1575,7 +1595,7 @@ export function InfiniteCanvas() {
           ? "Formate ce texte correctement en utilisant des titres (H1, H2, H3), du texte en gras (**texte**), des sauts de ligne et des retours à la ligne. Conserve le contenu mais améliore la structure et la lisibilité avec un formatage markdown approprié."
           : "Format this text properly using headings (H1, H2, H3), bold text (**text**), line breaks and newlines. Keep the content but improve the structure and readability with appropriate markdown formatting."
         
-        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], openAIKey)
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider)
         const htmlContent = markdownToHtml(resultContent)
         
         // Mettre à jour la carte existante au lieu d'en créer une nouvelle
@@ -1805,8 +1825,13 @@ export function InfiniteCanvas() {
   }, [connectionStart, canvasOffset, scale])
 
   const handleRunPrompt = async (promptId: string) => {
-     if (!openAIKey) {
-       alert("Veuillez configurer votre clé API OpenAI.")
+     const apiKey = aiProvider === "openai" ? openAIKey : geminiKey
+     if (!apiKey) {
+       alert(
+         language === "fr" 
+           ? `Veuillez configurer votre clé API ${aiProvider === "openai" ? "OpenAI" : "Gemini"}.`
+           : `Please configure your ${aiProvider === "openai" ? "OpenAI" : "Gemini"} API key.`
+       )
        return
      }
 
@@ -1840,7 +1865,7 @@ export function InfiniteCanvas() {
          }
 
          // Exécuter le prompt de manière asynchrone
-         executePrompt(promptElement, inputs, promptId).catch(error => {
+         executePrompt(promptElement, inputs, promptId, apiKey, aiProvider, openAIKey).catch(error => {
            console.error("Erreur executePrompt", error)
            setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: false } : el))
            alert("Une erreur est survenue lors du traitement.")
@@ -1851,7 +1876,7 @@ export function InfiniteCanvas() {
      })
   }
 
-  const executePrompt = async (promptElement: PromptElement, inputs: { type: string; content: string }[], promptId: string) => {
+  const executePrompt = async (promptElement: PromptElement, inputs: { type: string; content: string }[], promptId: string, apiKey: string, provider: "openai" | "gemini", openAIKeyForImages: string) => {
 
      try {
         let resultContent = ""
@@ -1884,7 +1909,7 @@ export function InfiniteCanvas() {
             if (inputs.length > 0) {
                 console.log("Inputs détectés, génération prompt synthétique...")
                 const synthesisPrompt = stylePrefix + "Analyse ces inputs et crée une description détaillée et visuelle (en anglais pour DALL-E) pour générer une image qui correspond à la demande suivante : " + promptElement.content
-                imagePrompt = await runPrompt(synthesisPrompt, inputs, openAIKey)
+                imagePrompt = await runPrompt(synthesisPrompt, inputs, apiKey, provider)
                 console.log("Prompt synthétique généré:", imagePrompt)
             } else {
                 console.log("Pas d'inputs, utilisation du prompt direct avec style:", style)
@@ -1894,18 +1919,30 @@ export function InfiniteCanvas() {
             }
             
             console.log("Appel generateImage avec prompt:", imagePrompt)
-            const result = await generateImage(imagePrompt, openAIKey)
-            console.log("Retour generateImage:", result)
-
-            if (result.url) {
-                resultContent = result.url
-                resultType = "image"
+            // Pour les images, on utilise toujours OpenAI même si Gemini est sélectionné
+            // car Gemini ne supporte pas la génération d'images
+            const imageProvider = provider === "gemini" ? "openai" : provider
+            const imageApiKey = imageProvider === "openai" ? openAIKeyForImages : apiKey
+            
+            if (imageProvider === "openai" && !imageApiKey) {
+              resultContent = language === "fr" 
+                ? "Erreur : Gemini ne supporte pas la génération d'images. Veuillez configurer une clé API OpenAI dans les paramètres pour générer des images."
+                : "Error: Gemini does not support image generation. Please configure an OpenAI API key in settings to generate images."
+              resultType = "text"
             } else {
-                resultContent = `Erreur lors de la génération de l'image: ${result.error}`
-                resultType = "text"
+              const result = await generateImage(imagePrompt, imageApiKey, imageProvider)
+              console.log("Retour generateImage:", result)
+
+              if (result.url) {
+                  resultContent = result.url
+                  resultType = "image"
+              } else {
+                  resultContent = `Erreur lors de la génération de l'image: ${result.error}`
+                  resultType = "text"
+              }
             }
         } else {
-            resultContent = await runPrompt(promptElement.content, inputs, openAIKey)
+            resultContent = await runPrompt(promptElement.content, inputs, apiKey, provider)
         }
 
         const pW = promptElement.width || 300
@@ -2740,16 +2777,16 @@ export function InfiniteCanvas() {
               <Settings className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-xl font-semibold">
                 {language === "fr" ? "Paramètres" : "Settings"}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+            <div className="py-6 space-y-6">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold">
                   {language === "fr" ? "Onboarding" : "Onboarding"}
                 </label>
                 <p className="text-xs text-gray-500">
@@ -2760,31 +2797,32 @@ export function InfiniteCanvas() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-1"
+                  className="w-full"
                   onClick={() => {
                     if (typeof window !== "undefined") {
                       window.dispatchEvent(new Event("jumble-open-onboarding"))
                     }
                   }}
                 >
-                  {language === "fr" ? "Revoir l’onboarding" : "Open onboarding"}
+                  {language === "fr" ? "Revoir l'onboarding" : "Open onboarding"}
                 </Button>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+              <div className="border-t pt-6 space-y-3">
+                <label className="text-sm font-semibold">
                   {language === "fr" ? "Langue" : "Language"}
                 </label>
                 <p className="text-xs text-gray-500">
                   {language === "fr"
-                    ? "Choisissez la langue de l’interface de Jumble."
-                    : "Choose the language of Jumble’s interface."}
+                    ? "Choisissez la langue de l'interface de Jumble."
+                    : "Choose the language of Jumble's interface."}
                 </p>
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2">
                   <Button
                     type="button"
                     size="sm"
                     variant={language === "fr" ? "default" : "outline"}
+                    className="flex-1"
                     onClick={() => setLanguage("fr")}
                   >
                     Français
@@ -2793,6 +2831,7 @@ export function InfiniteCanvas() {
                     type="button"
                     size="sm"
                     variant={language === "en" ? "default" : "outline"}
+                    className="flex-1"
                     onClick={() => setLanguage("en")}
                   >
                     English
@@ -2800,8 +2839,8 @@ export function InfiniteCanvas() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
+              <div className="border-t pt-6 space-y-3">
+                <label className="text-sm font-semibold flex items-center gap-2">
                   <Palette className="h-4 w-4" />
                   {language === "fr" ? "Couleur de fond" : "Background color"}
                 </label>
@@ -2832,26 +2871,88 @@ export function InfiniteCanvas() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Key className="h-4 w-4" />
-                  {language === "fr" ? "Clé API OpenAI" : "OpenAI API key"}
-                </label>
-                <Input
-                  type="password"
-                  placeholder="sk-..."
-                  value={openAIKey}
-                  onChange={(e) => setOpenAIKey(e.target.value)}
-                />
-                <p className="text-xs text-gray-500">
-                  {language === "fr"
-                    ? "Votre clé est stockée localement dans votre navigateur."
-                    : "Your key is stored locally in your browser."}
-                </p>
+              <div className="border-t pt-6 space-y-4">
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    {language === "fr" ? "Fournisseur IA" : "AI Provider"}
+                  </label>
+                  <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setAiProvider("openai")}
+                      className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        aiProvider === "openai"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      OpenAI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAiProvider("gemini")}
+                      className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        aiProvider === "gemini"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      Google Gemini
+                    </button>
+                  </div>
+                </div>
+
+                {aiProvider === "openai" ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      {language === "fr" ? "Clé API OpenAI" : "OpenAI API key"}
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="sk-..."
+                      value={openAIKey}
+                      onChange={(e) => setOpenAIKey(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500">
+                      {language === "fr"
+                        ? "Votre clé est stockée localement dans votre navigateur."
+                        : "Your key is stored locally in your browser."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      {language === "fr" ? "Clé API Gemini" : "Gemini API key"}
+                    </label>
+                    <Input
+                      type="password"
+                      placeholder="AIza..."
+                      value={geminiKey}
+                      onChange={(e) => setGeminiKey(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500">
+                      {language === "fr"
+                        ? "Votre clé est stockée localement dans votre navigateur."
+                        : "Your key is stored locally in your browser."}
+                    </p>
+                    {aiProvider === "gemini" && (
+                      <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md border border-amber-200">
+                        {language === "fr"
+                          ? "ℹ️ Note : Gemini ne supporte pas la génération d'images. Pour générer des images, configurez également une clé API OpenAI ci-dessus."
+                          : "ℹ️ Note: Gemini does not support image generation. To generate images, also configure an OpenAI API key above."}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="border-t pt-4 mt-4 space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2 mb-2">
+              <div className="border-t pt-6 space-y-3">
+                <label className="text-sm font-semibold flex items-center gap-2">
                   {language === "fr" ? "Gestion du Jumble" : "Jumble management"}
                 </label>
                 <div className="flex gap-2">

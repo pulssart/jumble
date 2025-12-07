@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { TextElement } from "@/types/canvas"
+import { ActionType } from "@/types/action"
 import { useLanguage } from "@/lib/language"
 import { Sparkles, Loader2, FileText, CheckSquare, Image as ImageIcon, Copy, Check, AlignLeft } from "lucide-react"
 import {
@@ -14,7 +15,7 @@ import {
 interface TextCardProps {
   element: TextElement
   onUpdate: (element: TextElement) => void
-  onAIAction?: (id: string, content: string, actionType: 'summary-with-action' | 'summary' | 'tasks' | 'image' | 'format') => void
+  onAIAction?: (id: string, content: string, actionType: ActionType) => void
 }
 
 export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
@@ -175,7 +176,7 @@ export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
     document.addEventListener("mouseup", handleMouseUp)
   }
 
-  const handleAIActionClick = async (type: 'summary-with-action' | 'summary' | 'tasks' | 'image' | 'format') => {
+  const handleAIActionClick = async (type: ActionType) => {
     // Extraire le texte brut du contenu HTML
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = content || ""

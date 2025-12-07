@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import Draggable from "react-draggable"
 import { CanvasElement } from "@/types/canvas"
+import { ActionType } from "@/types/action"
 import { useLanguage } from "@/lib/language"
 import { ImageCard } from "./elements/ImageCard"
 import { TextCard } from "./elements/TextCard"
@@ -50,7 +51,7 @@ interface CanvasElementProps {
   getSnappingPosition: (id: string, x: number, y: number) => { x: number; y: number; snappedX?: number | null; snappedY?: number | null }
   onSnap?: (lines: { x: number | null; y: number | null; activeX?: number; activeY?: number }) => void
   onDrag?: (id: string, x: number, y: number) => void
-  onAIAction?: (id: string, content: string, actionType: 'ideas' | 'tasks' | 'image' | 'summary-with-action' | 'summary') => void
+  onAIAction?: (id: string, content: string, actionType: ActionType) => void
   onConnectStart: (elementId: string, x: number, y: number) => void
   onConnectEnd: (elementId: string) => void
   onRunPrompt: (id: string) => void
