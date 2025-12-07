@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { TextElement } from "@/types/canvas"
 import { useLanguage } from "@/lib/language"
-import { Sparkles, Loader2, FileText, CheckSquare, Image as ImageIcon, Copy, Check } from "lucide-react"
+import { Sparkles, Loader2, FileText, CheckSquare, Image as ImageIcon, Copy, Check, AlignLeft } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
 interface TextCardProps {
   element: TextElement
   onUpdate: (element: TextElement) => void
-  onAIAction?: (id: string, content: string, actionType: 'summary-with-action' | 'summary' | 'tasks' | 'image') => void
+  onAIAction?: (id: string, content: string, actionType: 'summary-with-action' | 'summary' | 'tasks' | 'image' | 'format') => void
 }
 
 export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
@@ -175,7 +175,7 @@ export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
     document.addEventListener("mouseup", handleMouseUp)
   }
 
-  const handleAIActionClick = async (type: 'summary-with-action' | 'summary' | 'tasks' | 'image') => {
+  const handleAIActionClick = async (type: 'summary-with-action' | 'summary' | 'tasks' | 'image' | 'format') => {
     // Extraire le texte brut du contenu HTML
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = content || ""
@@ -288,6 +288,10 @@ export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
                     <DropdownMenuItem onClick={() => handleAIActionClick('image')}>
                       <ImageIcon className="w-4 h-4 mr-2" />
                       {language === "fr" ? "Génère une image" : "Generate an image"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAIActionClick('format')}>
+                      <AlignLeft className="w-4 h-4 mr-2" />
+                      {language === "fr" ? "Formate le texte" : "Format text"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

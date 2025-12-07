@@ -1431,7 +1431,7 @@ export function InfiniteCanvas() {
     }
   }, [])
 
-  const handleAIAction = async (originId: string, topic: string, actionType: 'ideas' | 'tasks' | 'image' | 'summary-with-action' | 'summary') => {
+  const handleAIAction = async (originId: string, topic: string, actionType: 'ideas' | 'tasks' | 'image' | 'summary-with-action' | 'summary' | 'format') => {
     if (!openAIKey) {
       alert("Veuillez d'abord configurer votre clé API OpenAI dans les paramètres.")
       return
@@ -1569,6 +1569,22 @@ export function InfiniteCanvas() {
         }
         
         setElements(prev => [...prev, newElement])
+      } else if (actionType === 'format') {
+        // Formater le texte dans la carte existante
+        const instruction = language === "fr" 
+          ? "Formate ce texte correctement en utilisant des titres (H1, H2, H3), du texte en gras (**texte**), des sauts de ligne et des retours à la ligne. Conserve le contenu mais améliore la structure et la lisibilité avec un formatage markdown approprié."
+          : "Format this text properly using headings (H1, H2, H3), bold text (**text**), line breaks and newlines. Keep the content but improve the structure and readability with appropriate markdown formatting."
+        
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], openAIKey)
+        const htmlContent = markdownToHtml(resultContent)
+        
+        // Mettre à jour la carte existante au lieu d'en créer une nouvelle
+        setElements(prev => prev.map(el => {
+          if (el.id === originId) {
+            return { ...el, content: htmlContent } as CanvasElement
+          }
+          return el
+        }))
       }
 
     } catch (e) {
