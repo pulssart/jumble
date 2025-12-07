@@ -941,27 +941,38 @@ export function InfiniteCanvas() {
         }
       }
       else if (url.toLowerCase().includes("linkedin.com") || url.toLowerCase().includes("www.linkedin.com")) {
+        // S'assurer que l'URL est valide et complète
+        let linkedinUrl = url.trim()
+        if (!linkedinUrl.startsWith("http://") && !linkedinUrl.startsWith("https://")) {
+          linkedinUrl = "https://" + linkedinUrl
+        }
         newElement = {
           id: generateId(),
           type: "linkedin",
           position: basePosition,
           zIndex: getNextZIndex(),
-          embedUrl: url,
+          embedUrl: linkedinUrl,
         }
       }
       else if (url.toLowerCase().includes("twitter.com") || url.toLowerCase().includes("x.com") || url.toLowerCase().includes("www.x.com")) {
+        // S'assurer que l'URL est valide et complète
+        let twitterUrl = url.trim()
+        if (!twitterUrl.startsWith("http://") && !twitterUrl.startsWith("https://")) {
+          twitterUrl = "https://" + twitterUrl
+        }
+        
         // Extraire le tweet ID de différentes façons
         let tweetId: string | null = null
         
         // Format standard: /status/1234567890
-        const statusMatch = url.match(/\/status\/(\d+)/i)
+        const statusMatch = twitterUrl.match(/\/status\/(\d+)/i)
         if (statusMatch) {
           tweetId = statusMatch[1]
         }
         
         // Format alternatif: /1234567890 (sans /status/)
         if (!tweetId) {
-          const directMatch = url.match(/(?:twitter\.com|x\.com)\/(\d+)/i)
+          const directMatch = twitterUrl.match(/(?:twitter\.com|x\.com)\/(\d+)/i)
           if (directMatch) {
             tweetId = directMatch[1]
           }

@@ -61,7 +61,11 @@ export function LinkedinCard({ element, onUpdate }: LinkedinCardProps) {
   // Récupérer les métadonnées au chargement ou changement d'URL
   useEffect(() => {
     const loadMetadata = async () => {
-      if (element.embedUrl && (!element.title || !element.description || !element.imageUrl)) {
+      // Vérifier que l'URL est valide avant de faire l'appel
+      if (element.embedUrl && 
+          element.embedUrl.trim() !== "" && 
+          (element.embedUrl.startsWith("http://") || element.embedUrl.startsWith("https://")) &&
+          (!element.title || !element.description || !element.imageUrl)) {
         setIsLoading(true)
         try {
           const metadata = await fetchUrlMetadata(element.embedUrl)

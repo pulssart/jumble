@@ -151,6 +151,12 @@ export async function fetchLinearData(url: string): Promise<UrlMetadata | null> 
 
 export async function fetchUrlMetadata(url: string): Promise<UrlMetadata | null> {
   try {
+    // Valider l'URL avant de continuer
+    if (!url || url.trim() === "" || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+      console.error("Invalid URL provided to fetchUrlMetadata:", url)
+      return null
+    }
+
     // Si c'est une URL Linear, utiliser la fonction spécialisée
     if (url.includes('linear.app')) {
       return await fetchLinearData(url);
