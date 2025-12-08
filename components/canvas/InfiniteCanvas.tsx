@@ -49,11 +49,37 @@ import { markdownToHtml } from "@/lib/utils"
 export function InfiniteCanvas() {
   const { language, setLanguage } = useLanguage()
 
+  const loopAudioRef = useRef<HTMLAudioElement | null>(null)
+  const processingCountRef = useRef(0)
+
   const playSound = (path: string) => {
     if (!soundEnabled) return
     const audio = new Audio(path)
     audio.volume = 0.5
     audio.play().catch(e => console.error("Error playing sound:", e))
+  }
+
+  const startLoopSound = () => {
+    if (!soundEnabled) return
+    processingCountRef.current += 1
+    
+    if (processingCountRef.current === 1) {
+        if (!loopAudioRef.current) {
+            loopAudioRef.current = new Audio("/sounds/progress_loop.wav")
+            loopAudioRef.current.loop = true
+            loopAudioRef.current.volume = 0.4
+        }
+        loopAudioRef.current.play().catch(e => console.error("Error playing loop sound:", e))
+    }
+  }
+
+  const stopLoopSound = () => {
+    processingCountRef.current = Math.max(0, processingCountRef.current - 1)
+    
+    if (processingCountRef.current === 0 && loopAudioRef.current) {
+        loopAudioRef.current.pause()
+        loopAudioRef.current.currentTime = 0
+    }
   }
   const { signOut, user } = useAuth()
 
@@ -117,6 +143,7 @@ export function InfiniteCanvas() {
       canvasOffset: { x: number; y: number }
       scale: number
       bgColor: string
+      soundEnabled?: boolean
     }>
   }> => {
     // Sauvegarder d'abord l'état actuel du space courant
@@ -125,6 +152,7 @@ export function InfiniteCanvas() {
       saveCanvasOffset(currentSpaceId, canvasOffset)
       saveCanvasZoom(currentSpaceId, scale)
       saveCanvasBgColor(currentSpaceId, bgColor)
+      saveSoundEnabled(currentSpaceId, soundEnabled)
     }
 
     const allSpaces = getSpaces()
@@ -136,12 +164,14 @@ export function InfiniteCanvas() {
       const spaceOffset = loadCanvasOffset(spaceId)
       const spaceZoom = loadCanvasZoom(spaceId)
       const spaceBg = loadCanvasBgColor(spaceId)
+      const spaceSound = loadSoundEnabled(spaceId)
 
       dataBySpace[spaceId] = {
         elements: spaceElements,
         canvasOffset: spaceOffset,
         scale: spaceZoom,
         bgColor: spaceBg,
+        soundEnabled: spaceSound
       }
     }
 
@@ -1533,6 +1563,8 @@ export function InfiniteCanvas() {
     const centerY = originElement.position.y + height / 2
     const radius = 350
 
+    startLoopSound()
+
     try {
       // Nouvelles actions pour TextCard
       if (actionType === 'summary-with-action') {
@@ -1676,6 +1708,8 @@ export function InfiniteCanvas() {
     } catch (e) {
       console.error(e)
       alert("Erreur lors de l'action IA.")
+    } finally {
+        stopLoopSound()
     }
   }
 
@@ -1930,6 +1964,9 @@ export function InfiniteCanvas() {
             return current.map(el => el.id === promptId ? { ...el, isRunning: false } : el)
          }
 
+         // Démarrer le son
+         startLoopSound()
+
          // Exécuter le prompt de manière asynchrone
          executePrompt(promptElement, inputs, promptId, apiKey, aiProvider, openAIKey).catch(error => {
            console.error("Erreur executePrompt", error)
@@ -2046,6 +2083,8 @@ export function InfiniteCanvas() {
          console.error("Erreur executePrompt", error)
          setElements(prev => prev.map(el => el.id === promptId ? { ...el, isRunning: false } : el))
          alert("Une erreur est survenue lors du traitement.")
+     } finally {
+        stopLoopSound()
      }
   }
 
