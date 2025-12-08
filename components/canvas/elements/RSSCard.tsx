@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/language"
 interface RSSCardProps {
   element: RSSElement
   onUpdate: (element: RSSElement) => void
+  bgColor?: string
 }
 
 // Fonction pour obtenir les données RSS
@@ -34,7 +35,7 @@ async function fetchRSSData(feedUrl: string) {
   }
 }
 
-export function RSSCard({ element, onUpdate }: RSSCardProps) {
+export function RSSCard({ element, onUpdate, bgColor = "bg-gray-50" }: RSSCardProps) {
   const { language } = useLanguage()
   const [isEditingUrl, setIsEditingUrl] = useState(false)
   const [urlValue, setUrlValue] = useState(element.feedUrl || "")
@@ -205,7 +206,7 @@ export function RSSCard({ element, onUpdate }: RSSCardProps) {
   const hasContent = element.title && element.feedUrl
 
   return (
-    <div className="drag-handle rounded-xl shadow-lg bg-gray-100 border border-gray-200 w-[400px] h-[350px] overflow-hidden cursor-grab active:cursor-grabbing group relative">
+    <div className="drag-handle rounded-xl shadow-lg bg-gray-100 border dark:border-none border-gray-200 w-[400px] h-[350px] overflow-hidden cursor-grab active:cursor-grabbing group relative">
       {/* Image de fond en full width/height */}
       {element.image ? (
         <div 

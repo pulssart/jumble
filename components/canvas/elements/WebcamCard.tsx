@@ -17,6 +17,7 @@ import {
 interface WebcamCardProps {
   element: WebcamElement
   onUpdate: (element: WebcamElement) => void
+  bgColor?: string
 }
 
 interface MediaDevice {
@@ -25,7 +26,7 @@ interface MediaDevice {
   kind: MediaDeviceKind
 }
 
-export function WebcamCard({ element, onUpdate }: WebcamCardProps) {
+export function WebcamCard({ element, onUpdate, bgColor = "bg-gray-50" }: WebcamCardProps) {
   const { language } = useLanguage()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)

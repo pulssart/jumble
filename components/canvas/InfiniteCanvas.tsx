@@ -2196,7 +2196,8 @@ export function InfiniteCanvas() {
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full h-screen overflow-hidden transition-colors duration-300 ${bgColor}`}
+      className={`relative w-full h-screen overflow-hidden transition-colors duration-300 ${bgColor} ${bgColor === "bg-[#303030]" ? "dark" : ""}`}
+      data-theme={bgColor === "bg-[#303030]" ? "dark" : "light"}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -2970,7 +2971,7 @@ export function InfiniteCanvas() {
                       { class: "bg-yellow-50", nameFr: "Jaune", nameEn: "Yellow" },
                       { class: "bg-rose-50", nameFr: "Rose", nameEn: "Pink" },
                       { class: "bg-green-50", nameFr: "Vert", nameEn: "Green" },
-                      { class: "bg-gray-900", nameFr: "Fond sombre", nameEn: "Dark background" },
+                      { class: "bg-[#303030]", nameFr: "Fond sombre", nameEn: "Dark background" },
                       { class: "bg-stone-100", nameFr: "Pierre", nameEn: "Stone" },
                       { class: "bg-orange-50", nameFr: "Orange", nameEn: "Orange" },
                       { class: "bg-indigo-50", nameFr: "Indigo", nameEn: "Indigo" },

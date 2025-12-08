@@ -30,6 +30,7 @@ async function fetchUrlMetadata(url: string) {
 interface LinkedinCardProps {
   element: LinkedinElement
   onUpdate: (element: LinkedinElement) => void
+  bgColor?: string
 }
 
 // Fonction utilitaire pour extraire un titre lisible de l'URL LinkedIn
@@ -69,7 +70,7 @@ const decodeHTMLEntities = (text: string) => {
   return textArea.value;
 }
 
-export function LinkedinCard({ element, onUpdate }: LinkedinCardProps) {
+export function LinkedinCard({ element, onUpdate, bgColor = "bg-gray-50" }: LinkedinCardProps) {
   const [isEditingLink, setIsEditingLink] = useState(!element.embedUrl)
   const [inputValue, setInputValue] = useState(element.embedUrl || "")
   const [isLoading, setIsLoading] = useState(false)
@@ -166,7 +167,7 @@ export function LinkedinCard({ element, onUpdate }: LinkedinCardProps) {
 
   if (isEditingLink) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="Collez le lien LinkedIn ici..."
@@ -215,7 +216,7 @@ export function LinkedinCard({ element, onUpdate }: LinkedinCardProps) {
   const mainText = element.description || element.customTitle || element.title
 
   return (
-    <div className="drag-handle rounded-xl shadow-sm bg-white border border-gray-300 w-[400px] overflow-hidden cursor-grab active:cursor-grabbing group hover:shadow-md transition-shadow flex flex-col font-sans text-sm text-[rgba(0,0,0,0.9)]">
+    <div className="drag-handle rounded-xl shadow-sm bg-white border dark:border-none border-gray-300 w-[400px] overflow-hidden cursor-grab active:cursor-grabbing group hover:shadow-md transition-shadow flex flex-col font-sans text-sm text-[rgba(0,0,0,0.9)]">
       
       {/* Bouton d’édition du lien (Overlay en haut à droite) */}
       <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">

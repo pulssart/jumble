@@ -185,7 +185,7 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
   if (!element.src) {
     return (
       <div 
-        className={`drag-handle w-[300px] rounded-xl shadow-lg bg-white border transition-colors p-4 flex flex-col gap-4 ${
+        className={`drag-handle w-[300px] rounded-xl shadow-lg bg-white border dark:border-none transition-colors p-4 flex flex-col gap-4 ${
           isDragOver ? "border-blue-500 bg-blue-50" : "border-gray-200"
         }`}
         onDragOver={handleDragOver}
@@ -250,7 +250,7 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
 
   if (imageError) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[200px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[200px]">
         <p className="text-sm text-red-500">Erreur de chargement de l'image</p>
         <Button 
             variant="ghost" 
@@ -270,7 +270,7 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
 
   return (
     <div 
-        className="drag-handle rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200 relative cursor-grab active:cursor-grabbing group flex items-center justify-center"
+        className="drag-handle rounded-xl shadow-lg overflow-hidden bg-white border dark:border-none border-gray-200 relative cursor-grab active:cursor-grabbing group flex items-center justify-center"
         style={{
             width: dimensions.width,
             height: dimensions.height,

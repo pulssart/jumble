@@ -10,6 +10,7 @@ import { useLanguage } from "@/lib/language"
 interface InstagramCardProps {
   element: InstagramElement
   onUpdate: (element: InstagramElement) => void
+  bgColor?: string
 }
 
 // Fonction pour extraire le shortcode d'une URL Instagram
@@ -55,7 +56,7 @@ function getEmbedUrl(shortcode: string, originalUrl?: string): string {
   return `https://www.instagram.com/p/${shortcode}/embed/${hideParams}`
 }
 
-export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
+export function InstagramCard({ element, onUpdate, bgColor = "bg-gray-50" }: InstagramCardProps) {
   const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(!element.shortcode)
   const [inputValue, setInputValue] = useState("")
@@ -115,7 +116,7 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder={language === "fr" ? "URL Instagram (post, reel, etc.)" : "Instagram URL (post, reel, etc.)"}
@@ -166,7 +167,7 @@ export function InstagramCard({ element, onUpdate }: InstagramCardProps) {
 
   return (
     <div 
-      className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden relative group"
+      className="rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 overflow-hidden relative group"
       style={{
         width: element.width || 400,
         minHeight: element.height || 500,

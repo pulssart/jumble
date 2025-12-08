@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/language"
 interface GoogleMapsCardProps {
   element: GoogleMapsElement
   onUpdate: (element: GoogleMapsElement) => void
+  bgColor?: string
 }
 
 // Convertir un lien Google Maps en URL d'embed
@@ -97,7 +98,7 @@ async function convertToEmbedUrl(url: string): Promise<string> {
   return cleanUrl
 }
 
-export function GoogleMapsCard({ element, onUpdate }: GoogleMapsCardProps) {
+export function GoogleMapsCard({ element, onUpdate, bgColor = "bg-gray-50" }: GoogleMapsCardProps) {
   const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(!element.url)
   const [inputValue, setInputValue] = useState(element.url || "")
@@ -237,7 +238,7 @@ export function GoogleMapsCard({ element, onUpdate }: GoogleMapsCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[400px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[400px]">
         <Input
           type="text"
           placeholder={language === "fr" ? "Lien Google Maps ou URL d'embed (maps.app.goo.gl, maps.google.com, ou iframe src)" : "Google Maps link or embed URL (maps.app.goo.gl, maps.google.com, or iframe src)"}
@@ -307,7 +308,7 @@ export function GoogleMapsCard({ element, onUpdate }: GoogleMapsCardProps) {
 
   return (
     <div 
-      className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden relative group"
+      className="rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 overflow-hidden relative group"
       style={{
         width: dimensions.width,
         height: dimensions.height,

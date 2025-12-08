@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/language"
 interface StockCardProps {
   element: StockElement
   onUpdate: (element: StockElement) => void
+  bgColor?: string
 }
 
 interface SymbolOption {
@@ -105,7 +106,7 @@ async function fetchStockData(symbol: string) {
   }
 }
 
-export function StockCard({ element, onUpdate }: StockCardProps) {
+export function StockCard({ element, onUpdate, bgColor = "bg-gray-50" }: StockCardProps) {
   const { language } = useLanguage()
   const [isEditingSymbol, setIsEditingSymbol] = useState(false)
   const [symbolValue, setSymbolValue] = useState(element.symbol || "AAPL")
@@ -218,7 +219,7 @@ export function StockCard({ element, onUpdate }: StockCardProps) {
   const bgGradient = isPositive ? "from-green-500 to-emerald-600" : "from-red-500 to-rose-600"
 
   return (
-    <div className={`drag-handle rounded-xl shadow-lg bg-gradient-to-br ${bgGradient} border border-opacity-30 w-[280px] overflow-hidden cursor-grab active:cursor-grabbing group`}>
+    <div className={`drag-handle rounded-xl shadow-lg bg-gradient-to-br ${bgGradient} border border-opacity-30 dark:border-none w-[280px] overflow-hidden cursor-grab active:cursor-grabbing group`}>
       <div className="p-5 text-white">
         {/* Header avec symbole */}
         <div className="flex items-center justify-between mb-4">

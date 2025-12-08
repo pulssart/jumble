@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 interface SpotifyCardProps {
   element: SpotifyElement
   onUpdate: (element: SpotifyElement) => void
+  bgColor?: string
 }
 
 function extractSpotifyId(input: string): string | null {
@@ -40,7 +41,7 @@ function extractSpotifyId(input: string): string | null {
   return null
 }
 
-export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
+export function SpotifyCard({ element, onUpdate, bgColor = "bg-gray-50" }: SpotifyCardProps) {
   const [isEditing, setIsEditing] = useState(!element.spotifyUri)
   const [inputValue, setInputValue] = useState("")
   const [isInteractive, setIsInteractive] = useState(false)
@@ -127,7 +128,7 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="Lien Spotify (Playlist, Album, Titre)"
@@ -178,7 +179,7 @@ export function SpotifyCard({ element, onUpdate }: SpotifyCardProps) {
 
   return (
     <div 
-      className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden flex flex-col relative group"
+      className="rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 overflow-hidden flex flex-col relative group"
       style={{
         width: dimensions.width,
         height: dimensions.height,

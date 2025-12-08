@@ -18,6 +18,7 @@ interface PromptCardProps {
   onUpdate: (element: PromptElement) => void
   onRun: (id: string) => void
   hasConnectedInputs?: boolean
+  bgColor?: string
 }
 
 const PROMPT_PRESETS = {
@@ -60,7 +61,7 @@ const IMAGE_STYLES = {
   }
 }
 
-export function PromptCard({ element, onUpdate, onRun, hasConnectedInputs = false }: PromptCardProps) {
+export function PromptCard({ element, onUpdate, onRun, hasConnectedInputs = false, bgColor = "bg-gray-50" }: PromptCardProps) {
   const { language } = useLanguage()
   const [prompt, setPrompt] = useState(element.content || "")
 

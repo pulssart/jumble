@@ -10,6 +10,7 @@ import { useLanguage } from "@/lib/language"
 interface WeatherCardProps {
   element: WeatherElement
   onUpdate: (element: WeatherElement) => void
+  bgColor?: string
 }
 
 // Fonction pour obtenir l'icône météo basée sur le code météo
@@ -183,7 +184,7 @@ interface CityOption {
   displayName: string
 }
 
-export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
+export function WeatherCard({ element, onUpdate, bgColor = "bg-gray-50" }: WeatherCardProps) {
   const { language } = useLanguage()
   const [isEditingCity, setIsEditingCity] = useState(false)
   const [cityValue, setCityValue] = useState(element.city || "")
@@ -346,7 +347,7 @@ export function WeatherCard({ element, onUpdate }: WeatherCardProps) {
   const gradientClass = getWeatherGradient(element.icon, element.description, element.temperature)
 
   return (
-    <div className={`drag-handle rounded-xl shadow-lg bg-gradient-to-br ${gradientClass} border border-opacity-30 w-[280px] overflow-hidden cursor-grab active:cursor-grabbing group`}>
+    <div className={`drag-handle rounded-xl shadow-lg bg-gradient-to-br ${gradientClass} border border-opacity-30 dark:border-none w-[280px] overflow-hidden cursor-grab active:cursor-grabbing group`}>
       <div className="p-5 text-white">
         {/* Header avec ville */}
         <div className="flex items-center justify-between mb-4">

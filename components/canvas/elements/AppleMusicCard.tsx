@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 interface AppleMusicCardProps {
   element: AppleMusicElement
   onUpdate: (element: AppleMusicElement) => void
+  bgColor?: string
 }
 
 // Transforme une URL Apple Music classique en URL d'embed
@@ -25,7 +26,7 @@ function toEmbedUrl(input: string): string | null {
   }
 }
 
-export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
+export function AppleMusicCard({ element, onUpdate, bgColor = "bg-gray-50" }: AppleMusicCardProps) {
   const [isEditing, setIsEditing] = useState(!element.url)
   const [inputValue, setInputValue] = useState(element.url || "")
   const [isInteractive, setIsInteractive] = useState(false)
@@ -118,7 +119,7 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[320px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[320px]">
         <Input
           type="text"
           placeholder="Colle ici un lien Apple Music (album, playlist, station...)"
@@ -171,7 +172,7 @@ export function AppleMusicCard({ element, onUpdate }: AppleMusicCardProps) {
 
   return (
     <div
-      className="relative rounded-2xl shadow-lg bg-white border border-gray-200 overflow-hidden group"
+      className="relative rounded-2xl shadow-lg bg-white border dark:border-none border-gray-200 overflow-hidden group"
       style={{
         width: dimensions.width,
         height: dimensions.height,

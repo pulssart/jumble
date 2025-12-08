@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/language"
 interface YoutubeCardProps {
   element: YoutubeElement
   onUpdate: (element: YoutubeElement) => void
+  bgColor?: string
 }
 
 function extractVideoId(url: string): string | null {
@@ -24,7 +25,7 @@ function extractVideoId(url: string): string | null {
   return null
 }
 
-export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
+export function YoutubeCard({ element, onUpdate, bgColor = "bg-gray-50" }: YoutubeCardProps) {
   const { language } = useLanguage()
   const [isEditing, setIsEditing] = useState(!element.videoId)
   const [inputValue, setInputValue] = useState("")
@@ -117,7 +118,7 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder={language === "fr" ? "URL YouTube ou ID vidéo" : "YouTube URL or video ID"}
@@ -171,7 +172,7 @@ export function YoutubeCard({ element, onUpdate }: YoutubeCardProps) {
 
   return (
     <div 
-      className="rounded-xl shadow-lg bg-black border border-gray-200 overflow-hidden relative group"
+      className="rounded-xl shadow-lg bg-black border dark:border-none border-gray-200 overflow-hidden relative group"
       style={{
         width: dimensions.width,
         height: dimensions.height,

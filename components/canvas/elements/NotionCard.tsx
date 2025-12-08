@@ -30,6 +30,7 @@ async function fetchUrlMetadata(url: string) {
 interface NotionCardProps {
   element: NotionElement
   onUpdate: (element: NotionElement) => void
+  bgColor?: string
 }
 
 // Fonction utilitaire pour extraire un titre lisible de l'URL Notion
@@ -58,7 +59,7 @@ const extractNotionTitle = (url: string): string => {
   }
 }
 
-export function NotionCard({ element, onUpdate }: NotionCardProps) {
+export function NotionCard({ element, onUpdate, bgColor = "bg-gray-50" }: NotionCardProps) {
   const [isEditingLink, setIsEditingLink] = useState(!element.embedUrl)
   const [inputValue, setInputValue] = useState(element.embedUrl || "")
   
@@ -126,7 +127,7 @@ export function NotionCard({ element, onUpdate }: NotionCardProps) {
 
   if (isEditingLink) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="Collez le lien Notion ici..."
@@ -158,7 +159,7 @@ export function NotionCard({ element, onUpdate }: NotionCardProps) {
   }
 
   return (
-    <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 w-[300px] overflow-hidden cursor-grab active:cursor-grabbing group">
+    <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 w-[300px] overflow-hidden cursor-grab active:cursor-grabbing group">
       <div className="p-6 flex flex-col items-center gap-4 hover:bg-gray-50 transition-colors">
         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
           <FileText className="w-6 h-6 text-gray-600" />

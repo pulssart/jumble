@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 interface FigmaCardProps {
   element: FigmaElement
   onUpdate: (element: FigmaElement) => void
+  bgColor?: string
 }
 
-export function FigmaCard({ element, onUpdate }: FigmaCardProps) {
+export function FigmaCard({ element, onUpdate, bgColor = "bg-gray-50" }: FigmaCardProps) {
   const [isEditing, setIsEditing] = useState(!element.url)
   const [inputValue, setInputValue] = useState(element.url || "")
 
@@ -32,7 +33,7 @@ export function FigmaCard({ element, onUpdate }: FigmaCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="URL du fichier Figma"
@@ -78,7 +79,7 @@ export function FigmaCard({ element, onUpdate }: FigmaCardProps) {
   const embedUrl = `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(element.url)}`
 
   return (
-    <div className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden">
+    <div className="rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 overflow-hidden">
       <div className="relative w-[450px] h-[300px] group">
         <iframe
           style={{ border: "1px solid rgba(0, 0, 0, 0.1)" }}

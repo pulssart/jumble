@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 interface ClockCardProps {
   element: ClockElement
   onUpdate: (element: ClockElement) => void
+  bgColor?: string
 }
 
 // Liste des timezones courantes
@@ -35,7 +36,7 @@ const COMMON_TIMEZONES = [
   { label: "UTC", value: "UTC" },
 ]
 
-export function ClockCard({ element, onUpdate }: ClockCardProps) {
+export function ClockCard({ element, onUpdate, bgColor = "bg-gray-50" }: ClockCardProps) {
   const { language } = useLanguage()
   const [time, setTime] = useState(new Date())
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -96,7 +97,7 @@ export function ClockCard({ element, onUpdate }: ClockCardProps) {
   }
 
   return (
-    <div className="group drag-handle rounded-3xl shadow-lg bg-white/80 backdrop-blur-md border border-white/50 w-[220px] h-[220px] flex flex-col items-center justify-center relative overflow-hidden select-none transition-all hover:shadow-xl hover:scale-[1.02]">
+    <div className="group drag-handle rounded-3xl shadow-lg bg-white/80 backdrop-blur-md border border-white/50 dark:border-none w-[220px] h-[220px] flex flex-col items-center justify-center relative overflow-hidden select-none transition-all hover:shadow-xl hover:scale-[1.02]">
       
       {/* Bouton de configuration (visible au survol) */}
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">

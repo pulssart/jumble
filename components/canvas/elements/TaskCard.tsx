@@ -41,7 +41,7 @@ export function TaskCard({ element, onUpdate }: TaskCardProps) {
   }
 
   return (
-    <div className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[250px] max-w-md`}>
+    <div className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[250px] max-w-md`}>
       <div className="flex items-start gap-3">
         <button
           onClick={handleToggle}

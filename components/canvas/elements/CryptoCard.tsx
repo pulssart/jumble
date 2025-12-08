@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/language"
 interface CryptoCardProps {
   element: CryptoElement
   onUpdate: (element: CryptoElement) => void
+  bgColor?: string
 }
 
 interface CryptoOption {
@@ -114,7 +115,7 @@ async function fetchCryptoData(coinId?: string, symbol?: string) {
   }
 }
 
-export function CryptoCard({ element, onUpdate }: CryptoCardProps) {
+export function CryptoCard({ element, onUpdate, bgColor = "bg-gray-50" }: CryptoCardProps) {
   const { language } = useLanguage()
   const [isEditingSymbol, setIsEditingSymbol] = useState(false)
   const [symbolValue, setSymbolValue] = useState(element.symbol || "BTC")
@@ -237,7 +238,7 @@ export function CryptoCard({ element, onUpdate }: CryptoCardProps) {
   const bgGradient = isPositive ? "from-green-500 to-emerald-600" : "from-red-500 to-rose-600"
 
   return (
-    <div className={`drag-handle rounded-xl shadow-lg bg-gradient-to-br ${bgGradient} border border-opacity-30 w-[280px] overflow-hidden cursor-grab active:cursor-grabbing group`}>
+    <div className={`drag-handle rounded-xl shadow-lg bg-gradient-to-br ${bgGradient} border border-opacity-30 dark:border-none w-[280px] overflow-hidden cursor-grab active:cursor-grabbing group`}>
       <div className="p-5 text-white">
         {/* Header avec symbole */}
         <div className="flex items-center justify-between mb-4">

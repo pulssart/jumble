@@ -30,6 +30,7 @@ async function fetchUrlMetadata(url: string) {
 interface LinearCardProps {
   element: LinearElement
   onUpdate: (element: LinearElement) => void
+  bgColor?: string
 }
 
 // Fonction utilitaire pour extraire un titre lisible de l'URL Linear
@@ -87,7 +88,7 @@ const extractLinearTitle = (url: string): string => {
   }
 }
 
-export function LinearCard({ element, onUpdate }: LinearCardProps) {
+export function LinearCard({ element, onUpdate, bgColor = "bg-gray-50" }: LinearCardProps) {
   const [isEditingLink, setIsEditingLink] = useState(!element.embedUrl)
   const [inputValue, setInputValue] = useState(element.embedUrl || "")
 
@@ -202,7 +203,7 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
 
   if (isEditingLink) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="Collez le lien Linear ici..."
@@ -248,7 +249,7 @@ export function LinearCard({ element, onUpdate }: LinearCardProps) {
   }
 
   return (
-    <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 w-[300px] overflow-hidden cursor-grab active:cursor-grabbing group">
+    <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 w-[300px] overflow-hidden cursor-grab active:cursor-grabbing group">
       <div className="p-6 flex flex-col items-center gap-4 hover:bg-gray-50 transition-colors">
         <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center">
           <LayoutList className="w-6 h-6 text-indigo-600" />

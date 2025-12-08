@@ -10,9 +10,10 @@ import { useLanguage } from "@/lib/language"
 interface GifCardProps {
   element: GifElement
   onUpdate: (element: GifElement) => void
+  bgColor?: string
 }
 
-export function GifCard({ element, onUpdate }: GifCardProps) {
+export function GifCard({ element, onUpdate, bgColor = "bg-gray-50" }: GifCardProps) {
   const { language } = useLanguage()
   const [gifLoaded, setGifLoaded] = useState(false)
   const [gifError, setGifError] = useState(false)
@@ -202,7 +203,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
   if (!element.src) {
     return (
       <div 
-        className={`drag-handle w-[300px] rounded-xl shadow-lg bg-white border transition-colors p-4 flex flex-col gap-4 ${
+        className={`drag-handle w-[300px] rounded-xl shadow-lg bg-white border dark:border-none transition-colors p-4 flex flex-col gap-4 ${
           isDragOver ? "border-blue-500 bg-blue-50" : "border-gray-200"
         }`}
         onDragOver={handleDragOver}
@@ -267,7 +268,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
 
   if (gifError) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[200px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[200px]">
         <p className="text-sm text-red-500">Erreur de chargement du GIF</p>
         <Button 
             variant="ghost" 
@@ -287,7 +288,7 @@ export function GifCard({ element, onUpdate }: GifCardProps) {
 
   return (
     <div 
-        className="drag-handle rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200 relative cursor-grab active:cursor-grabbing group flex items-center justify-center"
+        className="drag-handle rounded-xl shadow-lg overflow-hidden bg-white border dark:border-none border-gray-200 relative cursor-grab active:cursor-grabbing group flex items-center justify-center"
         style={{
             width: dimensions.width,
             height: dimensions.height,

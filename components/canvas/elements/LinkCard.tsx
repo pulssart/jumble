@@ -30,9 +30,10 @@ async function fetchUrlMetadata(url: string) {
 interface LinkCardProps {
   element: LinkElement
   onUpdate: (element: LinkElement) => void
+  bgColor?: string
 }
 
-export function LinkCard({ element, onUpdate }: LinkCardProps) {
+export function LinkCard({ element, onUpdate, bgColor = "bg-gray-50" }: LinkCardProps) {
   const [isEditingLink, setIsEditingLink] = useState(!element.url)
   const [inputValue, setInputValue] = useState(element.url || "")
   const [isEditingTitle, setIsEditingTitle] = useState(false)
@@ -112,7 +113,7 @@ export function LinkCard({ element, onUpdate }: LinkCardProps) {
 
   if (isEditingLink) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="Collez une URL (ex: google.com)"
@@ -158,7 +159,7 @@ export function LinkCard({ element, onUpdate }: LinkCardProps) {
   }
 
   return (
-    <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 w-[320px] overflow-hidden cursor-grab active:cursor-grabbing group hover:shadow-xl transition-shadow flex flex-col">
+    <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 w-[320px] overflow-hidden cursor-grab active:cursor-grabbing group hover:shadow-xl transition-shadow flex flex-col">
       {/* Image de couverture (Open Graph) */}
       {element.imageUrl ? (
         <div className="h-40 bg-gray-100 relative overflow-hidden border-b border-gray-100">

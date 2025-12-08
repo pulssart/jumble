@@ -214,7 +214,7 @@ export function TextCard({ element, onUpdate, onAIAction }: TextCardProps) {
   return (
     <div 
       ref={containerRef}
-      className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border p-4 relative group ${
+      className={`${isEditing ? "" : "drag-handle"} rounded-xl shadow-lg bg-white border dark:border-none p-4 relative group ${
         isGenerating 
           ? "border-purple-500" 
           : "border-gray-200"

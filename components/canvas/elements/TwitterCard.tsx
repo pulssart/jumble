@@ -30,6 +30,7 @@ async function fetchTweet(tweetId: string) {
 interface TwitterCardProps {
   element: TwitterElement
   onUpdate: (element: TwitterElement) => void
+  bgColor?: string
 }
 
 function extractTweetId(url: string): string | null {
@@ -44,7 +45,7 @@ function extractTweetId(url: string): string | null {
   return null
 }
 
-export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
+export function TwitterCard({ element, onUpdate, bgColor = "bg-gray-50" }: TwitterCardProps) {
   const [isEditing, setIsEditing] = useState(!element.tweetId)
   const [inputValue, setInputValue] = useState("")
   const [isInteractive, setIsInteractive] = useState(false)
@@ -106,7 +107,7 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
 
   if (isEditing) {
     return (
-      <div className="drag-handle rounded-xl shadow-lg bg-white border border-gray-200 p-4 min-w-[300px]">
+      <div className="drag-handle rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 p-4 min-w-[300px]">
         <Input
           type="text"
           placeholder="URL du Tweet (X)"
@@ -156,14 +157,14 @@ export function TwitterCard({ element, onUpdate }: TwitterCardProps) {
   }
 
   return (
-    <div className="rounded-xl shadow-lg bg-white border border-gray-200 overflow-hidden w-[400px] flex flex-col">
+    <div className="rounded-xl shadow-lg bg-white border dark:border-none border-gray-200 overflow-hidden w-[400px] flex flex-col">
       <div className="relative group min-h-[150px]" onMouseEnter={handleMouseEnter}>
         {/* Overlay pour le drag */}
         {!isInteractive && (
           <div className="drag-handle absolute inset-0 z-10 cursor-grab active:cursor-grabbing bg-transparent" />
         )}
         
-        <div className={`w-full ${isInteractive ? "pointer-events-auto" : "pointer-events-none select-none"}`}>
+          <div className={`w-full ${isInteractive ? "pointer-events-auto" : "pointer-events-none select-none"}`} data-theme={bgColor === "bg-[#303030]" ? "dark" : "light"}>
             {isLoading ? (
                 <div className="flex justify-center py-8">
                    <TweetSkeleton />
