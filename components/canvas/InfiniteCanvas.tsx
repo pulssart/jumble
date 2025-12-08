@@ -1816,11 +1816,12 @@ export function InfiniteCanvas() {
   }
 
   const handleConnectStart = useCallback((elementId: string, x: number, y: number) => {
+    playSound("/sounds/tap_02.wav")
     const localX = (x - offsetRef.current.x) / scaleRef.current
     const localY = (y - offsetRef.current.y) / scaleRef.current
     
     setConnectionStart({ id: elementId, x: localX, y: localY })
-  }, [])
+  }, [soundEnabled])
 
   // Fonction pour trouver tous les éléments connectés (directement ou indirectement)
   const getConnectedElements = (elementId: string, visited: Set<string> = new Set()): Set<string> => {
@@ -1875,31 +1876,30 @@ export function InfiniteCanvas() {
   }
 
   const handleConnectEnd = useCallback((targetId: string) => {
-    setConnectionStart((currentStart) => {
-      if (currentStart && currentStart.id !== targetId) {
-        const sourceId = currentStart.id
-        setElements(prev => {
-          const sourceEl = prev.find(el => el.id === sourceId)
-          const targetEl = prev.find(el => el.id === targetId)
-          
-          if (sourceEl && targetEl) {
-            return prev.map(el => {
-              if (el.id === sourceId) {
-                const oldConnections = el.connections || []
-                if (!oldConnections.includes(targetId)) {
-                  return { ...el, connections: [...oldConnections, targetId] }
-                }
+    if (connectionStart && connectionStart.id !== targetId) {
+      playSound("/sounds/tap_02.wav")
+      const sourceId = connectionStart.id
+      setElements(prev => {
+        const sourceEl = prev.find(el => el.id === sourceId)
+        const targetEl = prev.find(el => el.id === targetId)
+        
+        if (sourceEl && targetEl) {
+          return prev.map(el => {
+            if (el.id === sourceId) {
+              const oldConnections = el.connections || []
+              if (!oldConnections.includes(targetId)) {
+                return { ...el, connections: [...oldConnections, targetId] }
               }
-              return el
-            })
-          }
-          return prev
-        })
-      }
-      return null
-    })
+            }
+            return el
+          })
+        }
+        return prev
+      })
+    }
+    setConnectionStart(null)
     setMousePos(null)
-  }, [])
+  }, [connectionStart, soundEnabled])
 
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
