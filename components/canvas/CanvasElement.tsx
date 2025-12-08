@@ -62,6 +62,7 @@ interface CanvasElementProps {
   onFocusElement?: (id: string) => void
   scale: number
   hasConnectedInputs?: boolean
+  soundEnabled?: boolean
 }
 
 export const CanvasElementComponent = React.memo(function CanvasElementComponent({
@@ -88,6 +89,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   onFocusElement,
   scale,
   hasConnectedInputs = false,
+  soundEnabled = true,
 }: CanvasElementProps) {
   const { language } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
@@ -137,6 +139,13 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   }, [element.position, isDragging])
 
   const handleStart = (e: any, data: { x: number; y: number }) => {
+    // Play sound on grab
+    if (soundEnabled) {
+      const audio = new Audio("/sounds/type_01.wav")
+      audio.volume = 0.5
+      audio.play().catch(e => console.error("Error playing sound:", e))
+    }
+
     setIsDragging(true)
     dragStartPosRef.current = { x: element.position.x, y: element.position.y }
     dragCurrentPosRef.current = { x: data.x, y: data.y }
@@ -149,6 +158,13 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   }
 
   const handleStop = (e: any, data: { x: number; y: number }) => {
+    // Play sound on drop
+    if (soundEnabled) {
+      const audio = new Audio("/sounds/button.wav")
+      audio.volume = 0.5
+      audio.play().catch(e => console.error("Error playing sound:", e))
+    }
+
     setIsDragging(false)
     
     if (innerRef.current) {

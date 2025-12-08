@@ -14,9 +14,10 @@ import {
   saveCanvasOffset, loadCanvasOffset, 
   saveCanvasZoom, loadCanvasZoom, 
   saveCanvasBgColor, loadCanvasBgColor,
+  saveSoundEnabled, loadSoundEnabled,
   setCurrentSpaceId, getCurrentSpaceId
 } from "@/lib/storage"
-import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud, Loader2, CloudSun, TrendingUp, Coins, Rss } from "lucide-react"
+import { Plus, Image, Type, CheckSquare, StickyNote, Youtube, Music, Figma, FileText, LayoutList, Linkedin, Twitter, Link as LinkIcon, Wand2, Settings, Key, Zap, Download, Upload, Minus, Palette, LayoutGrid, ChevronDown, PenLine, Keyboard, Video, Clock, Trash2, Instagram, Bug, LogOut, MapPin, Cloud, Loader2, CloudSun, TrendingUp, Coins, Rss, Volume2, VolumeX } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,13 @@ import { markdownToHtml } from "@/lib/utils"
 
 export function InfiniteCanvas() {
   const { language, setLanguage } = useLanguage()
+
+  const playSound = (path: string) => {
+    if (!soundEnabled) return
+    const audio = new Audio(path)
+    audio.volume = 0.5
+    audio.play().catch(e => console.error("Error playing sound:", e))
+  }
   const { signOut, user } = useAuth()
 
   // Space State
@@ -62,6 +70,7 @@ export function InfiniteCanvas() {
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
   const [bgColor, setBgColor] = useState("bg-gray-50")
+  const [soundEnabled, setSoundEnabled] = useState(true)
   const [aiProvider, setAiProvider] = useState<"openai" | "gemini">("openai")
   const [openAIKey, setOpenAIKey] = useState("")
   const [geminiKey, setGeminiKey] = useState("")
@@ -294,11 +303,13 @@ export function InfiniteCanvas() {
       const loadedOffset = loadCanvasOffset(spaceId)
       const loadedZoom = loadCanvasZoom(spaceId)
       const loadedBgColor = loadCanvasBgColor(spaceId)
+      const loadedSound = loadSoundEnabled(spaceId)
 
       setElements(loadedElements)
       setCanvasOffset(loadedOffset)
       setScale(loadedZoom)
       setBgColor(loadedBgColor)
+      setSoundEnabled(loadedSound)
       setIsElementsLoaded(true)
       
       console.log("Space chargé:", spaceId, {
@@ -324,6 +335,7 @@ export function InfiniteCanvas() {
         saveCanvasOffset(currentSpaceId, canvasOffset)
         saveCanvasZoom(currentSpaceId, scale)
         saveCanvasBgColor(currentSpaceId, bgColor)
+        saveSoundEnabled(currentSpaceId, soundEnabled)
     }
 
     setCurrentSpaceIdState(spaceId)
@@ -352,6 +364,7 @@ export function InfiniteCanvas() {
     const current = spaces.find(s => s.id === currentSpaceId)
     if (current) {
         setNewSpaceName(current.name)
+        playSound("/sounds/caution.wav")
         setIsSpaceRenameDialogOpen(true)
     }
   }
@@ -576,10 +589,12 @@ export function InfiniteCanvas() {
   }, [])
 
   const handleDeleteElement = useCallback((id: string) => {
+    playSound("/sounds/swipe_01.wav")
     setElements((prev) => prev.filter((el) => el.id !== id))
   }, [])
 
   const handleDeleteSelection = () => {
+    playSound("/sounds/swipe_01.wav")
     setElements((prev) => prev.filter((el) => !selectedIds.includes(el.id)))
     setSelectedIds([])
     setShowMultiDeleteWarning(false)
@@ -1275,11 +1290,13 @@ export function InfiniteCanvas() {
     ) {
       // Si un focus est actif, un clic dans le vide le désactive
       if (focusState && !target.closest(".canvas-element")) {
+        playSound("/sounds/disabled.wav")
         clearFocus()
         return
       }
 
       if (!target.closest(".canvas-element") && !target.closest(".react-draggable")) {
+        playSound("/sounds/disabled.wav")
         e.preventDefault()
 
         const containerRect = containerRef.current?.getBoundingClientRect()
@@ -2060,6 +2077,7 @@ export function InfiniteCanvas() {
 
   const handleForceBackup = async () => {
     if (!user?.id || !currentSpaceId) {
+      playSound("/sounds/select.wav")
       alert(language === "fr" ? "Vous devez être connecté pour sauvegarder dans le cloud." : "You must be logged in to save to the cloud.")
       return
     }
@@ -2070,6 +2088,7 @@ export function InfiniteCanvas() {
       const thirtyMinutes = 30 * 60 * 1000 // 30 minutes en millisecondes
       
       if (timeSinceLastBackup < thirtyMinutes) {
+        playSound("/sounds/select.wav")
         const remainingMinutes = Math.ceil((thirtyMinutes - timeSinceLastBackup) / (60 * 1000))
         alert(
           language === "fr" 
@@ -2087,6 +2106,7 @@ export function InfiniteCanvas() {
       saveCanvasOffset(currentSpaceId, canvasOffset)
       saveCanvasZoom(currentSpaceId, scale)
       saveCanvasBgColor(currentSpaceId, bgColor)
+      saveSoundEnabled(currentSpaceId, soundEnabled)
 
       // Générer le payload de backup complet depuis le stockage local
       const payload = await generateBackupPayload()
@@ -2097,11 +2117,13 @@ export function InfiniteCanvas() {
       // Mettre à jour la date de la dernière sauvegarde
       setLastBackupDate(new Date())
       
+      playSound("/sounds/celebration.wav")
       alert(language === "fr" 
         ? "✅ Backup sauvegardé avec succès dans le cloud !" 
         : "✅ Backup saved successfully to the cloud!")
     } catch (error) {
       console.error("Erreur backup manuel:", error)
+      playSound("/sounds/select.wav")
       alert(language === "fr" 
         ? "❌ Erreur lors de la sauvegarde du backup. Vérifiez la console pour plus de détails." 
         : "❌ Error saving backup. Check the console for more details.")
@@ -2140,6 +2162,7 @@ export function InfiniteCanvas() {
               saveCanvasOffset(newSpace.id, spaceData.canvasOffset || { x: 0, y: 0 })
               saveCanvasZoom(newSpace.id, spaceData.scale || 1)
               saveCanvasBgColor(newSpace.id, spaceData.bgColor || "bg-gray-50")
+              saveSoundEnabled(newSpace.id, spaceData.soundEnabled ?? true)
             }
           }
           
@@ -2179,6 +2202,9 @@ export function InfiniteCanvas() {
           }
           if (data.bgColor) {
             setBgColor(data.bgColor)
+          }
+          if (typeof data.soundEnabled === 'boolean') {
+             setSoundEnabled(data.soundEnabled)
           }
           alert("Jumble importé avec succès !")
         } else {
@@ -2384,6 +2410,7 @@ export function InfiniteCanvas() {
                 onRunPrompt={handleRunPrompt}
                 onFocusElement={handleFocusElement}
                 scale={scale}
+                soundEnabled={soundEnabled}
               />
             )
           })
@@ -2461,7 +2488,7 @@ export function InfiniteCanvas() {
             {spaces.map(space => (
               <DropdownMenuItem 
                 key={space.id} 
-                onClick={() => handleSwitchSpace(space.id)}
+                onClick={() => { playSound("/sounds/tap_01.wav"); handleSwitchSpace(space.id) }}
                 className="flex items-center justify-between group"
               >
                 <span className={space.id === currentSpaceId ? "font-medium" : ""}>
@@ -2478,6 +2505,7 @@ export function InfiniteCanvas() {
                       onClick={(e) => {
                         e.stopPropagation()
                         setSpaceToDelete(space)
+                        playSound("/sounds/caution.wav")
                         setIsDeleteSpaceDialogOpen(true)
                       }}
                     >
@@ -2488,12 +2516,12 @@ export function InfiniteCanvas() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleCreateSpace}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); handleCreateSpace() }}>
                 <Plus className="h-4 w-4 mr-2" />
                 {language === "fr" ? "Nouveau Jumble" : "New Jumble"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={openRenameDialog}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); openRenameDialog() }}>
                 <PenLine className="h-4 w-4 mr-2" />
                 {language === "fr" ? "Renommer le Jumble actuel" : "Rename current Jumble"}
             </DropdownMenuItem>
@@ -2509,7 +2537,7 @@ export function InfiniteCanvas() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="w-56 my-2">
             {/* Prompt IA - seul */}
-            <DropdownMenuItem onClick={() => addElement("prompt")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("prompt") }}>
               <Zap className="h-4 w-4 mr-2 text-yellow-500" />
               {language === "fr" ? "Prompt IA" : "AI Prompt"}
             </DropdownMenuItem>
@@ -2523,15 +2551,15 @@ export function InfiniteCanvas() {
                 {language === "fr" ? "Texte & Notes" : "Text & Notes"}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => addElement("text")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("text") }}>
               <Type className="h-4 w-4 mr-2" />
               {language === "fr" ? "Texte" : "Text"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("task")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("task") }}>
               <CheckSquare className="h-4 w-4 mr-2" />
               {language === "fr" ? "Tâche" : "Task"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("postit")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("postit") }}>
               <StickyNote className="h-4 w-4 mr-2" />
               {language === "fr" ? "Post-it" : "Sticky note"}
             </DropdownMenuItem>
@@ -2545,27 +2573,27 @@ export function InfiniteCanvas() {
                 {language === "fr" ? "Média" : "Media"}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => addElement("youtube")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("youtube") }}>
               <Youtube className="h-4 w-4 mr-2" />
               YouTube
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("spotify")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("spotify") }}>
               <Music className="h-4 w-4 mr-2" />
               Spotify
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("applemusic")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("applemusic") }}>
               <Music className="h-4 w-4 mr-2 text-red-500" />
               Apple Music
             </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("image")}>
+                <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("image") }}>
                   <Image className="h-4 w-4 mr-2" />
                   {language === "fr" ? "Image" : "Image"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("gif")}>
+                <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("gif") }}>
                   <Image className="h-4 w-4 mr-2" />
                   {language === "fr" ? "GIF animé" : "Animated GIF"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("webcam")}>
+                <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("webcam") }}>
                   <Video className="h-4 w-4 mr-2" />
                   {language === "fr" ? "Webcam" : "Webcam"}
                 </DropdownMenuItem>
@@ -2579,15 +2607,15 @@ export function InfiniteCanvas() {
                 {language === "fr" ? "Design & Outils" : "Design & Tools"}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => addElement("figma")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("figma") }}>
               <Figma className="h-4 w-4 mr-2" />
               Figma
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("notion")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("notion") }}>
               <FileText className="h-4 w-4 mr-2" />
               Notion
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("linear")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("linear") }}>
               <LayoutList className="h-4 w-4 mr-2" />
               Linear
             </DropdownMenuItem>
@@ -2601,15 +2629,15 @@ export function InfiniteCanvas() {
                 {language === "fr" ? "Réseaux sociaux" : "Social Media"}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => addElement("linkedin")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("linkedin") }}>
               <Linkedin className="h-4 w-4 mr-2" />
               LinkedIn
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("twitter")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("twitter") }}>
               <Twitter className="h-4 w-4 mr-2" />
               X (Twitter)
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addElement("instagram")}>
+            <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("instagram") }}>
               <Instagram className="h-4 w-4 mr-2" />
               Instagram
             </DropdownMenuItem>
@@ -2623,15 +2651,15 @@ export function InfiniteCanvas() {
                 {language === "fr" ? "Autres" : "Others"}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => addElement("weather")}>
+                <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("weather") }}>
                   <CloudSun className="h-4 w-4 mr-2" />
                   {language === "fr" ? "Météo" : "Weather"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("stock")}>
+                <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("stock") }}>
                   <TrendingUp className="h-4 w-4 mr-2" />
                   {language === "fr" ? "Bourse" : "Stock"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => addElement("crypto")}>
+                <DropdownMenuItem onClick={() => { playSound("/sounds/tap_01.wav"); addElement("crypto") }}>
                   <Coins className="h-4 w-4 mr-2" />
                   {language === "fr" ? "Crypto" : "Crypto"}
                 </DropdownMenuItem>
@@ -2942,7 +2970,7 @@ export function InfiniteCanvas() {
                     size="sm"
                     variant={language === "fr" ? "default" : "outline"}
                     className="flex-1"
-                    onClick={() => setLanguage("fr")}
+                    onClick={() => { playSound("/sounds/toggle_on.wav"); setLanguage("fr") }}
                   >
                     Français
                   </Button>
@@ -2951,9 +2979,36 @@ export function InfiniteCanvas() {
                     size="sm"
                     variant={language === "en" ? "default" : "outline"}
                     className="flex-1"
-                    onClick={() => setLanguage("en")}
+                    onClick={() => { playSound("/sounds/toggle_on.wav"); setLanguage("en") }}
                   >
                     English
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border-t pt-6 space-y-3">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                  {language === "fr" ? "Sons de l'interface" : "Interface sounds"}
+                </label>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    {language === "fr"
+                      ? "Activer ou désactiver les effets sonores."
+                      : "Enable or disable sound effects."}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={soundEnabled ? "default" : "outline"}
+                    onClick={() => {
+                        const newState = !soundEnabled
+                        setSoundEnabled(newState)
+                        if (newState) playSound("/sounds/toggle_on.wav")
+                        else playSound("/sounds/toggle_off.wav")
+                    }}
+                  >
+                    {soundEnabled ? (language === "fr" ? "Activé" : "On") : (language === "fr" ? "Désactivé" : "Off")}
                   </Button>
                 </div>
               </div>
@@ -2999,7 +3054,7 @@ export function InfiniteCanvas() {
                   <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
                     <button
                       type="button"
-                      onClick={() => setAiProvider("openai")}
+                      onClick={() => { playSound("/sounds/toggle_on.wav"); setAiProvider("openai") }}
                       className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                         aiProvider === "openai"
                           ? "bg-white text-gray-900 shadow-sm"
@@ -3010,7 +3065,7 @@ export function InfiniteCanvas() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAiProvider("gemini")}
+                      onClick={() => { playSound("/sounds/toggle_on.wav"); setAiProvider("gemini") }}
                       className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                         aiProvider === "gemini"
                           ? "bg-white text-gray-900 shadow-sm"

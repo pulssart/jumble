@@ -114,6 +114,7 @@ export function createSpace(name: string): Space {
   saveCanvasBgColor(newSpace.id, "bg-gray-50")
   saveCanvasZoom(newSpace.id, 1)
   saveCanvasOffset(newSpace.id, { x: 0, y: 0 })
+  saveSoundEnabled(newSpace.id, true)
   // Initial save to DB (empty)
   saveElements(newSpace.id, [])
 
@@ -141,6 +142,7 @@ export function deleteSpace(id: string) {
   localStorage.removeItem(getSpaceKey(id, "offset"))
   localStorage.removeItem(getSpaceKey(id, "zoom"))
   localStorage.removeItem(getSpaceKey(id, "bg-color"))
+  localStorage.removeItem(getSpaceKey(id, "sound-enabled"))
 }
 
 export async function initSpaces(): Promise<Space> {
@@ -255,7 +257,27 @@ export async function loadElements(spaceId: string): Promise<CanvasElement[]> {
   }
 }
 
-// Offset, Zoom, and BgColor remain in LocalStorage for now (lightweight)
+// Offset, Zoom, BgColor and Sound remain in LocalStorage for now (lightweight)
+
+export function saveSoundEnabled(spaceId: string, enabled: boolean): void {
+  try {
+    localStorage.setItem(getSpaceKey(spaceId, "sound-enabled"), JSON.stringify(enabled))
+  } catch (error) {
+    console.error("Erreur sauvegarde son:", error)
+  }
+}
+
+export function loadSoundEnabled(spaceId: string): boolean {
+  try {
+    const data = localStorage.getItem(getSpaceKey(spaceId, "sound-enabled"))
+    // Par défaut activé si pas de préférence
+    if (data === null) return true 
+    return JSON.parse(data) as boolean
+  } catch (error) {
+    console.error("Erreur chargement son:", error)
+    return true
+  }
+}
 
 export function saveCanvasOffset(spaceId: string, offset: { x: number; y: number }): void {
   try {

@@ -1,26 +1,26 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { X, Sparkles, Zap } from "lucide-react"
+import { X, Sparkles, Volume2 } from "lucide-react"
 import { useLanguage } from "@/lib/language"
 
-const UPDATE_KEY = "jumble-update-shown-v3"
+const UPDATE_KEY = "jumble-update-shown-v4-sounds"
 
 const updates = {
   fr: {
     title: "Nouveautés",
-    gemini: {
-      title: "Support Gemini",
-      description: "Gemini est maintenant disponible en plus d'OpenAI dans les paramètres ! Vous pouvez choisir entre OpenAI et Google Gemini pour toutes les fonctionnalités IA, y compris la génération d'images.",
+    sounds: {
+      title: "Sons d'interface",
+      description: "Jumble prend vie avec de nouveaux effets sonores ! Profitez d'une expérience plus immersive lors de vos interactions. Vous pouvez désactiver les sons dans les paramètres.",
     },
     cta: "Découvrir",
     dismiss: "Fermer",
   },
   en: {
     title: "What's New",
-    gemini: {
-      title: "Gemini Support",
-      description: "Gemini is now available alongside OpenAI in settings! You can choose between OpenAI and Google Gemini for all AI features, including image generation.",
+    sounds: {
+      title: "Interface Sounds",
+      description: "Jumble comes alive with new sound effects! Enjoy a more immersive experience during your interactions. You can disable sounds in the settings.",
     },
     cta: "Discover",
     dismiss: "Close",
@@ -81,11 +81,11 @@ export function UpdateModal() {
         <div className="space-y-4">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex-shrink-0">
-              <Zap className="h-5 w-5 text-blue-600" />
+              <Volume2 className="h-5 w-5 text-blue-600" />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium text-gray-900 mb-1">{t.gemini.title}</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">{t.gemini.description}</p>
+              <h4 className="font-medium text-gray-900 mb-1">{t.sounds.title}</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">{t.sounds.description}</p>
             </div>
           </div>
         </div>
