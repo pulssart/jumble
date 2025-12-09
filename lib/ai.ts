@@ -164,7 +164,7 @@ export async function generateImage(
     console.log("Aucune image générée trouvée dans la réponse")
     return { url: null, error: "Aucune donnée d'image dans la réponse" }
     } else {
-      // Gemini 2.5 Flash Image (Nano Banana) supporte la génération d'images
+      // Gemini 2.5 Flash Image (REST)
       try {
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
@@ -175,9 +175,7 @@ export async function generateImage(
             },
             body: JSON.stringify({
               contents: [{
-                parts: [{
-                  text: prompt
-                }]
+                parts: [{ text: prompt }]
               }]
             }),
           }
@@ -185,15 +183,16 @@ export async function generateImage(
 
         const data = await response.json()
         
+        console.log("Gemini Image Response Full Data:", JSON.stringify(data, null, 2))
+
         if (data.error) {
           console.error("Gemini Image Error:", data.error)
           return { url: null, error: data.error.message || "Erreur de l'API Gemini" }
         }
         
-        // Gemini retourne l'image en base64 dans candidates[0].content.parts[].inlineData
         const parts = data.candidates?.[0]?.content?.parts || []
         for (const part of parts) {
-          if (part.inlineData && part.inlineData.data) {
+          if (part.inlineData?.data) {
             const base64Data = part.inlineData.data
             const mimeType = part.inlineData.mimeType || "image/png"
             console.log("Image generated successfully with Gemini")
