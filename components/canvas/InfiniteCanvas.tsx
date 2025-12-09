@@ -52,10 +52,10 @@ export function InfiniteCanvas() {
   const loopAudioRef = useRef<HTMLAudioElement | null>(null)
   const processingCountRef = useRef(0)
 
-  const playSound = (path: string) => {
+  const playSound = (path: string, volume = 1) => {
     if (!soundEnabled) return
     const audio = new Audio(path)
-    audio.volume = 0.5
+    audio.volume = volume
     audio.play().catch(e => console.error("Error playing sound:", e))
   }
 
@@ -67,7 +67,7 @@ export function InfiniteCanvas() {
         if (!loopAudioRef.current) {
             loopAudioRef.current = new Audio("/sounds/progress_loop.wav")
             loopAudioRef.current.loop = true
-            loopAudioRef.current.volume = 0.4
+            loopAudioRef.current.volume = 1
         }
         loopAudioRef.current.play().catch(e => console.error("Error playing loop sound:", e))
     }
@@ -619,12 +619,12 @@ export function InfiniteCanvas() {
   }, [])
 
   const handleDeleteElement = useCallback((id: string) => {
-    playSound("/sounds/swipe_01.wav")
+    playSound("/sounds/swipe_01.wav", 0.1)
     setElements((prev) => prev.filter((el) => el.id !== id))
   }, [])
 
   const handleDeleteSelection = () => {
-    playSound("/sounds/swipe_01.wav")
+    playSound("/sounds/swipe_01.wav", 0.1)
     setElements((prev) => prev.filter((el) => !selectedIds.includes(el.id)))
     setSelectedIds([])
     setShowMultiDeleteWarning(false)
@@ -1320,13 +1320,13 @@ export function InfiniteCanvas() {
     ) {
       // Si un focus est actif, un clic dans le vide le désactive
       if (focusState && !target.closest(".canvas-element")) {
-        playSound("/sounds/disabled.wav")
+        playSound("/sounds/disabled.wav", 0.1)
         clearFocus()
         return
       }
 
       if (!target.closest(".canvas-element") && !target.closest(".react-draggable")) {
-        playSound("/sounds/disabled.wav")
+        playSound("/sounds/disabled.wav", 0.1)
         e.preventDefault()
 
         const containerRect = containerRef.current?.getBoundingClientRect()

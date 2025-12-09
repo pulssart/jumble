@@ -142,7 +142,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
     // Play sound on grab
     if (soundEnabled) {
       const audio = new Audio("/sounds/type_01.wav")
-      audio.volume = 0.5
+      audio.volume = 1
       audio.play().catch(e => console.error("Error playing sound:", e))
     }
 
@@ -160,8 +160,8 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   const handleStop = (e: any, data: { x: number; y: number }) => {
     // Play sound on drop
     if (soundEnabled) {
-      const audio = new Audio("/sounds/button.wav")
-      audio.volume = 0.5
+      const audio = new Audio("/sounds/type_05.wav")
+      audio.volume = 1
       audio.play().catch(e => console.error("Error playing sound:", e))
     }
 
