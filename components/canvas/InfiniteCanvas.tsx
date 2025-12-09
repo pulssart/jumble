@@ -1816,7 +1816,7 @@ export function InfiniteCanvas() {
   }
 
   const handleConnectStart = useCallback((elementId: string, x: number, y: number) => {
-    playSound("/sounds/tap_02.wav")
+    playSound("/sounds/toggle_on.wav")
     const localX = (x - offsetRef.current.x) / scaleRef.current
     const localY = (y - offsetRef.current.y) / scaleRef.current
     
@@ -1877,7 +1877,7 @@ export function InfiniteCanvas() {
 
   const handleConnectEnd = useCallback((targetId: string) => {
     if (connectionStart && connectionStart.id !== targetId) {
-      playSound("/sounds/tap_02.wav")
+      playSound("/sounds/toggle_off.wav")
       const sourceId = connectionStart.id
       setElements(prev => {
         const sourceEl = prev.find(el => el.id === sourceId)
