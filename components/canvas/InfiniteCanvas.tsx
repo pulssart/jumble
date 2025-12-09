@@ -394,7 +394,7 @@ export function InfiniteCanvas() {
     const current = spaces.find(s => s.id === currentSpaceId)
     if (current) {
         setNewSpaceName(current.name)
-        playSound("/sounds/caution.wav")
+        playSound("/sounds/caution.wav", 0.4)
         setIsSpaceRenameDialogOpen(true)
     }
   }
@@ -1197,12 +1197,16 @@ export function InfiniteCanvas() {
         }))
         lastMousePos.current = { x: e.clientX, y: e.clientY }
       } else if (isSelecting.current && selectionStartRef.current) {
-        const containerRect = containerRef.current?.getBoundingClientRect()
-        const offsetX = containerRect?.left || 0
-        const offsetY = containerRect?.top || 0
-
-        const currentMouseX = (e.clientX - offsetX - canvasOffset.x) / scale
-        const currentMouseY = (e.clientY - offsetY - canvasOffset.y) / scale
+        const canvasRect = canvasRef.current?.getBoundingClientRect()
+        if (!canvasRect) return
+        
+        // Position de la souris dans le repère du canvas (avant transform scale)
+        const mouseX = e.clientX - canvasRect.left
+        const mouseY = e.clientY - canvasRect.top
+        
+        // Convertir en coordonnées canvas logiques (déjà compensées du scale)
+        const currentMouseX = mouseX / scale
+        const currentMouseY = mouseY / scale
         
         const startX = selectionStartRef.current.x
         const startY = selectionStartRef.current.y
@@ -1329,17 +1333,21 @@ export function InfiniteCanvas() {
         playSound("/sounds/disabled.wav", 0.1)
         e.preventDefault()
 
-        const containerRect = containerRef.current?.getBoundingClientRect()
-        const offsetX = containerRect?.left || 0
-        const offsetY = containerRect?.top || 0
-
-        isSelecting.current = true
-        selectionStartRef.current = { 
-          x: (e.clientX - offsetX - canvasOffset.x) / scale,
-          y: (e.clientY - offsetY - canvasOffset.y) / scale
-        }
-        if (!e.shiftKey) {
-           setSelectedIds([]) 
+        const canvasRect = canvasRef.current?.getBoundingClientRect()
+        if (canvasRect) {
+          // Position de la souris dans le repère du canvas (avant transform scale)
+          const mouseX = e.clientX - canvasRect.left
+          const mouseY = e.clientY - canvasRect.top
+          
+          // Convertir en coordonnées canvas logiques (déjà compensées du scale)
+          isSelecting.current = true
+          selectionStartRef.current = { 
+            x: mouseX / scale,
+            y: mouseY / scale
+          }
+          if (!e.shiftKey) {
+             setSelectedIds([]) 
+          }
         }
       }
     }
@@ -2116,7 +2124,7 @@ export function InfiniteCanvas() {
 
   const handleForceBackup = async () => {
     if (!user?.id || !currentSpaceId) {
-      playSound("/sounds/select.wav")
+      playSound("/sounds/caution.wav", 0.4)
       alert(language === "fr" ? "Vous devez être connecté pour sauvegarder dans le cloud." : "You must be logged in to save to the cloud.")
       return
     }
@@ -2127,7 +2135,7 @@ export function InfiniteCanvas() {
       const thirtyMinutes = 30 * 60 * 1000 // 30 minutes en millisecondes
       
       if (timeSinceLastBackup < thirtyMinutes) {
-        playSound("/sounds/select.wav")
+        playSound("/sounds/caution.wav", 0.4)
         const remainingMinutes = Math.ceil((thirtyMinutes - timeSinceLastBackup) / (60 * 1000))
         alert(
           language === "fr" 
@@ -2156,13 +2164,13 @@ export function InfiniteCanvas() {
       // Mettre à jour la date de la dernière sauvegarde
       setLastBackupDate(new Date())
       
-      playSound("/sounds/celebration.wav")
+      playSound("/sounds/celebration.wav", 1)
       alert(language === "fr" 
         ? "✅ Backup sauvegardé avec succès dans le cloud !" 
         : "✅ Backup saved successfully to the cloud!")
     } catch (error) {
       console.error("Erreur backup manuel:", error)
-      playSound("/sounds/select.wav")
+      playSound("/sounds/caution.wav", 0.4)
       alert(language === "fr" 
         ? "❌ Erreur lors de la sauvegarde du backup. Vérifiez la console pour plus de détails." 
         : "❌ Error saving backup. Check the console for more details.")
@@ -2544,7 +2552,7 @@ export function InfiniteCanvas() {
                       onClick={(e) => {
                         e.stopPropagation()
                         setSpaceToDelete(space)
-                        playSound("/sounds/caution.wav")
+                        playSound("/sounds/caution.wav", 0.4)
                         setIsDeleteSpaceDialogOpen(true)
                       }}
                     >
