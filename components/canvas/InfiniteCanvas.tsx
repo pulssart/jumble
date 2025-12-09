@@ -2017,20 +2017,26 @@ export function InfiniteCanvas() {
               stylePrefix = "Create a pencil sketch. "
             }
             
-            if (inputs.length > 0) {
-                console.log("Inputs détectés, génération prompt synthétique...")
+            let imageInput: string | undefined = undefined;
+            const inputImage = inputs.find(i => i.type === 'image')
+            if (inputImage) {
+                imageInput = inputImage.content
+            }
+
+            if (inputs.length > 0 && !imageInput) {
+                console.log("Inputs texte détectés, génération prompt synthétique...")
                 const synthesisPrompt = stylePrefix + "Analyse ces inputs et crée une description détaillée et visuelle (en anglais pour DALL-E) pour générer une image qui correspond à la demande suivante : " + promptElement.content
                 imagePrompt = await runPrompt(synthesisPrompt, inputs, apiKey, provider)
                 console.log("Prompt synthétique généré:", imagePrompt)
             } else {
-                console.log("Pas d'inputs, utilisation du prompt direct avec style:", style)
+                console.log("Pas d'inputs texte ou présence d'image, utilisation du prompt direct avec style:", style)
                 if (stylePrefix) {
                   imagePrompt = stylePrefix + imagePrompt
                 }
             }
             
             console.log("Appel generateImage avec prompt:", imagePrompt)
-            const result = await generateImage(imagePrompt, apiKey, provider)
+            const result = await generateImage(imagePrompt, apiKey, provider, imageInput)
             console.log("Retour generateImage:", result)
 
             if (result.url) {

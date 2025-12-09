@@ -124,10 +124,13 @@ export async function generateTasks(
 export async function generateImage(
   prompt: string, 
   apiKey: string,
-  provider: AIProvider = "openai"
+  provider: AIProvider = "openai",
+  imageInput?: string // Base64 de l'image d'entrée optionnelle
 ): Promise<{ url: string | null, error?: string }> {
   try {
     if (provider === "openai") {
+    // OpenAI ne supporte pas l'image-to-image via cette API pour l'instant (DALL-E 2 edit est différent)
+    // On ignore l'image input pour OpenAI et on fait du text-to-image
     const body = JSON.stringify({
         model: "dall-e-3",
         prompt: prompt,
@@ -164,34 +167,47 @@ export async function generateImage(
     console.log("Aucune image générée trouvée dans la réponse")
     return { url: null, error: "Aucune donnée d'image dans la réponse" }
     } else {
-      // Gemini 2.5 Flash Image (REST)
+      // Gemini 2.5 Flash Image (pour tout : Text-to-Image et Image-to-Image)
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-          {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`
+        
+        const parts: any[] = [{ text: prompt }]
+        
+        if (imageInput) {
+            console.log("Image input detected for Gemini")
+            // Extraction du base64 pur (sans le header data:image/...)
+            const base64Data = imageInput.replace(/^data:image\/\w+;base64,/, "")
+            
+            parts.push({
+                inlineData: {
+                    mimeType: "image/jpeg", // On assume jpeg par défaut
+                    data: base64Data
+                }
+            })
+        }
+
+        const response = await fetch(url, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              contents: [{
-                parts: [{ text: prompt }]
-              }]
+                contents: [{ parts }]
             }),
-          }
-        )
+        })
 
         const data = await response.json()
         
-        console.log("Gemini Image Response Full Data:", JSON.stringify(data, null, 2))
+        console.log("Gemini Response Full Data:", JSON.stringify(data, null, 2))
 
         if (data.error) {
-          console.error("Gemini Image Error:", data.error)
+          console.error("Gemini Error:", data.error)
           return { url: null, error: data.error.message || "Erreur de l'API Gemini" }
         }
         
-        const parts = data.candidates?.[0]?.content?.parts || []
-        for (const part of parts) {
+        // Gemini retourne l'image en base64 dans candidates[0].content.parts[].inlineData
+        const responseParts = data.candidates?.[0]?.content?.parts || []
+        for (const part of responseParts) {
           if (part.inlineData?.data) {
             const base64Data = part.inlineData.data
             const mimeType = part.inlineData.mimeType || "image/png"
@@ -201,7 +217,8 @@ export async function generateImage(
         }
 
         console.log("Aucune image générée trouvée dans la réponse Gemini")
-        return { url: null, error: "Aucune donnée d'image dans la réponse Gemini" }
+        const textResponse = responseParts.find((p: any) => p.text)?.text
+        return { url: null, error: textResponse || "Aucune donnée d'image dans la réponse Gemini" }
       } catch (error: any) {
         console.error("Erreur Gemini Image:", error)
         return { url: null, error: error.message || "Erreur réseau ou inconnue" }
@@ -301,27 +318,60 @@ export async function runPrompt(
 
     return data.choices[0].message.content || ""
     } else {
-      // Pour Gemini, on construit un prompt texte simple (Gemini supporte les images mais nécessite une structure différente)
-      let promptText = instruction + "\n\nVoici les données d'entrée à traiter:\n"
+      // Construction du payload pour Gemini (Multimodal)
+      const parts: any[] = []
       
+      parts.push({
+        text: instruction + "\n\nVoici les données d'entrée à traiter (images et/ou texte). Si des images sont présentes, utilise-les comme contexte visuel ou référence de style selon l'instruction."
+      })
+
       inputs.forEach((input, index) => {
-        if (input.type === 'image') {
-          promptText += `[Input ${index + 1} - Image fournie comme référence stylistique]\n`
+        parts.push({ text: `\n[Input ${index + 1} - Type: ${input.type}]` })
+
+        if (input.type === 'image' && input.content.startsWith('data:image')) {
+            // Extraction du base64 et du mimeType
+            const matches = input.content.match(/^data:(.+);base64,(.+)$/)
+            if (matches && matches.length === 3) {
+                parts.push({
+                    inlineData: {
+                        mimeType: matches[1],
+                        data: matches[2]
+                    }
+                })
+            }
         } else {
-          promptText += `[Input ${index + 1}]:\n${input.content}\n\n`
+            parts.push({ text: input.content })
         }
       })
-      
-      promptText += "\n---\nRÉSULTAT :"
-      
-      const data = await callGemini(promptText, apiKey, "gemini-2.5-flash")
-      
-      if (data.error) {
-        console.error("Gemini Error:", data.error)
-        return "Erreur API Gemini: " + (data.error.message || "Erreur inconnue")
-      }
 
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+      parts.push({ text: "\n---\nRÉSULTAT :" })
+
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [{ parts }]
+            }),
+            }
+        )
+        
+        const data = await response.json()
+        
+        if (data.error) {
+            console.error("Gemini Error:", data.error)
+            return "Erreur API Gemini: " + (data.error.message || "Erreur inconnue")
+        }
+
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+      } catch (error: any) {
+         console.error("Erreur appel Gemini:", error)
+         return "Erreur réseau ou inconnue avec Gemini."
+      }
     }
   } catch (error) {
     console.error("Erreur Run Prompt:", error)
