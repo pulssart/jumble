@@ -2085,7 +2085,8 @@ export function InfiniteCanvas() {
                 position: { x: newX, y: newY },
                 zIndex: getNextZIndex(),
                 width: 400,
-                height: 400,
+                // On ne met pas de hauteur fixe pour laisser le composant s'adapter au ratio de l'image
+                height: 400, 
              } as any
         } else {
              // Convertir le markdown en HTML pour un meilleur formatage
@@ -2407,12 +2408,27 @@ export function InfiniteCanvas() {
                         className={`drop-shadow-md opacity-80 cursor-pointer pointer-events-auto hover:stroke-red-500 hover:stroke-[4px] transition-all ${isProcessing ? 'animate-cable-flow' : ''}`}
                         onClick={(e) => {
                            e.stopPropagation()
-                           setElements(prev => prev.map(el => {
-                              if (el.id === sourceEl.id) {
-                                 return { ...el, connections: (el.connections || []).filter(id => id !== targetId) }
+                           setElements(prev => {
+                              const newElements = prev.map(el => {
+                                 if (el.id === sourceEl.id) {
+                                    return { ...el, connections: (el.connections || []).filter(id => id !== targetId) }
+                                 }
+                                 return el
+                              })
+                              
+                              // Vérifier si après suppression, l'élément a toujours des connexions ou est connecté à quelque chose
+                              const hasConnections = newElements.some(el => {
+                                 const hasOutgoing = el.id === sourceEl.id ? (el.connections && el.connections.length > 0) : (el.connections && el.connections.length > 0)
+                                 const hasIncoming = newElements.some(other => other.connections?.includes(el.id))
+                                 return hasOutgoing || hasIncoming
+                              })
+                              
+                              if (!hasConnections) {
+                                 setFocusState(null)
                               }
-                              return el
-                           }))
+                              
+                              return newElements
+                           })
                         }}
                      >
                         <title>Cliquer pour supprimer la connexion</title>

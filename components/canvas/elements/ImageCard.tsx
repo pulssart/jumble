@@ -281,7 +281,7 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
         ref={imgRef}
         src={element.src}
         alt={element.alt || "Image"}
-        className="block select-none pointer-events-none w-full h-full"
+        className="block select-none pointer-events-none w-full h-full object-contain"
         draggable={false}
         onLoad={handleImageLoad}
         onError={() => setImageError(true)}
