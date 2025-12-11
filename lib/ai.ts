@@ -40,14 +40,17 @@ export async function generateBrainstormingIdeas(
   topic: string, 
   apiKey: string, 
   count: number = 5,
-  provider: AIProvider = "openai"
+  provider: AIProvider = "openai",
+  context?: string
 ): Promise<string[]> {
   try {
+    const contextPrompt = context ? `CONTEXTE GLOBAL (à respecter impérativement) : ${context}\n\n` : ""
+
     if (provider === "openai") {
       const data = await callOpenAI([
           {
             role: "system",
-            content: "Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.",
+            content: `${contextPrompt}Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.`,
           },
           {
             role: "user",
@@ -61,10 +64,11 @@ export async function generateBrainstormingIdeas(
     }
     
     const content = data.choices[0].message.content
-    const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
+      const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
       return JSON.parse(cleanContent)
     } else {
-      const prompt = `Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.\n\nDonne-moi ${count} idées créatives liées à : "${topic}". Format JSON strict: ["idée 1", "idée 2", ...]`
+      const contextPrompt = context ? `CONTEXTE GLOBAL (à respecter impérativement) : ${context}\n\n` : ""
+      const prompt = `${contextPrompt}Tu es un assistant créatif. L'utilisateur te donne un sujet, tu dois générer une liste d'idées courtes et percutantes (max 10 mots par idée). Réponds UNIQUEMENT par un tableau JSON de chaînes de caractères.\n\nDonne-moi ${count} idées créatives liées à : "${topic}". Format JSON strict: ["idée 1", "idée 2", ...]`
       const data = await callGemini(prompt, apiKey)
       
       if (data.error) {
@@ -85,14 +89,17 @@ export async function generateBrainstormingIdeas(
 export async function generateTasks(
   topic: string, 
   apiKey: string,
-  provider: AIProvider = "openai"
+  provider: AIProvider = "openai",
+  context?: string
 ): Promise<{ title: string, steps: string[] }> {
   try {
+    const contextPrompt = context ? `CONTEXTE GLOBAL (à respecter impérativement) : ${context}\n\n` : ""
+
     if (provider === "openai") {
       const data = await callOpenAI([
           {
             role: "system",
-            content: "Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).",
+            content: `${contextPrompt}Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).`,
           },
           {
             role: "user",
@@ -106,7 +113,8 @@ export async function generateTasks(
     const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim()
       return JSON.parse(cleanContent)
     } else {
-      const prompt = `Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).\n\nCrée un plan d'action pour : "${topic}". Format JSON strict: { "title": "Titre du plan", "steps": ["étape 1", "étape 2", ...] }`
+      const contextPrompt = context ? `CONTEXTE GLOBAL (à respecter impérativement) : ${context}\n\n` : ""
+      const prompt = `${contextPrompt}Tu es un gestionnaire de projet expert. L'utilisateur te donne un objectif, tu dois créer un plan d'action concret. Réponds UNIQUEMENT par un objet JSON avec un titre et un tableau d'étapes (strings).\n\nCrée un plan d'action pour : "${topic}". Format JSON strict: { "title": "Titre du plan", "steps": ["étape 1", "étape 2", ...] }`
       const data = await callGemini(prompt, apiKey)
       
       if (data.error) return { title: "Erreur", steps: [] }
@@ -125,15 +133,18 @@ export async function generateImage(
   prompt: string, 
   apiKey: string,
   provider: AIProvider = "openai",
-  imageInput?: string // Base64 de l'image d'entrée optionnelle
+  imageInput?: string, // Base64 de l'image d'entrée optionnelle
+  context?: string
 ): Promise<{ url: string | null, error?: string }> {
   try {
+    const finalPrompt = context ? `CONTEXTE GLOBAL DU PROJET : ${context}. PROMPT IMAGE : ${prompt}` : prompt
+
     if (provider === "openai") {
     // OpenAI ne supporte pas l'image-to-image via cette API pour l'instant (DALL-E 2 edit est différent)
     // On ignore l'image input pour OpenAI et on fait du text-to-image
     const body = JSON.stringify({
         model: "dall-e-3",
-        prompt: prompt,
+        prompt: finalPrompt,
         n: 1,
         size: "1024x1024",
         quality: "standard",
@@ -171,7 +182,7 @@ export async function generateImage(
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`
         
-        const parts: any[] = [{ text: prompt }]
+        const parts: any[] = [{ text: finalPrompt }]
         
         if (imageInput) {
             console.log("Image input detected for Gemini")
@@ -234,16 +245,19 @@ export async function runPrompt(
   instruction: string,
   inputs: { type: string; content: string }[],
   apiKey: string,
-  provider: AIProvider = "openai"
+  provider: AIProvider = "openai",
+  context?: string
 ): Promise<string> {
   try {
+    const contextPrompt = context ? `CONTEXTE GLOBAL (à respecter impérativement) : ${context}\n\n` : ""
+
     // Construction du contenu du message utilisateur (multimodal)
     const contentParts: any[] = []
 
     // Ajouter l'instruction principale
     contentParts.push({
         type: "text",
-        text: `INSTRUCTION :\n${instruction}\n\nVoici les données d'entrée à traiter. IMPORTANT : Si des images sont fournies, elles servent UNIQUEMENT de référence stylistique (ambiance, couleurs, composition, style graphique). Ne pas décrire le contenu littéral de l'image, mais s'inspirer de son style pour traiter la demande.`
+        text: `${contextPrompt}INSTRUCTION :\n${instruction}\n\nVoici les données d'entrée à traiter. IMPORTANT : Si des images sont fournies, elles servent UNIQUEMENT de référence stylistique (ambiance, couleurs, composition, style graphique). Ne pas décrire le contenu littéral de l'image, mais s'inspirer de son style pour traiter la demande.`
     })
 
     // Ajouter chaque input comme partie du message
@@ -297,7 +311,7 @@ export async function runPrompt(
         messages: [
           {
             role: "system",
-            content: "Tu es un processeur de données intelligent capable d'analyser du texte et des images. Ta tâche est de traiter les inputs fournis en suivant l'instruction donnée. Si des images sont fournies, considère-les comme des références de STYLE (ambiance, rendu visuel, direction artistique) et non de contenu, sauf instruction contraire explicite.",
+            content: `${contextPrompt}Tu es un processeur de données intelligent capable d'analyser du texte et des images. Ta tâche est de traiter les inputs fournis en suivant l'instruction donnée. Si des images sont fournies, considère-les comme des références de STYLE (ambiance, rendu visuel, direction artistique) et non de contenu, sauf instruction contraire explicite.`,
           },
           {
             role: "user",
@@ -322,7 +336,7 @@ export async function runPrompt(
       const parts: any[] = []
       
       parts.push({
-        text: instruction + "\n\nVoici les données d'entrée à traiter (images et/ou texte). Si des images sont présentes, utilise-les comme contexte visuel ou référence de style selon l'instruction."
+        text: `${contextPrompt}${instruction}\n\nVoici les données d'entrée à traiter (images et/ou texte). Si des images sont présentes, utilise-les comme contexte visuel ou référence de style selon l'instruction.`
       })
 
       inputs.forEach((input, index) => {

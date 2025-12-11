@@ -5,6 +5,7 @@ import { generateBrainstormingIdeas, generateTasks, generateImage, runPrompt } f
 import { CanvasElement, PromptElement, Space } from "@/types/canvas"
 import { ActionType } from "@/types/action"
 import { CanvasElementComponent } from "./CanvasElement"
+import { SettingsDialog } from "./SettingsDialog"
 import { 
   saveBackup, loadBackup
 } from "@/lib/storage-supabase-simple"
@@ -86,10 +87,16 @@ export function InfiniteCanvas() {
   // Space State
   const [spaces, setSpaces] = useState<Space[]>([])
   const [currentSpaceId, setCurrentSpaceIdState] = useState<string | null>(null)
+  const currentSpace = spaces.find(s => s.id === currentSpaceId)
   const [isSpaceRenameDialogOpen, setIsSpaceRenameDialogOpen] = useState(false)
   const [newSpaceName, setNewSpaceName] = useState("")
   const [isDeleteSpaceDialogOpen, setIsDeleteSpaceDialogOpen] = useState(false)
   const [spaceToDelete, setSpaceToDelete] = useState<Space | null>(null)
+  
+  // Settings State
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+  const [settingsSpaceId, setSettingsSpaceId] = useState<string | null>(null)
+  const [settingsContext, setSettingsContext] = useState("")
 
   // Canvas State
   const [elements, setElements] = useState<CanvasElement[]>([])
@@ -380,6 +387,19 @@ export function InfiniteCanvas() {
     const newSpace = createSpace(language === "fr" ? "Nouveau Jumble" : "New Jumble")
     setSpaces(getSpaces())
     handleSwitchSpace(newSpace.id)
+  }
+
+  const handleSaveContext = (context: string) => {
+    if (settingsSpaceId) {
+      updateSpace(settingsSpaceId, { aiContext: context })
+      setSpaces(prev => prev.map(s => s.id === settingsSpaceId ? { ...s, aiContext: context } : s))
+    }
+  }
+
+  const openSettingsDialog = (space: Space) => {
+    setSettingsSpaceId(space.id)
+    setSettingsContext(space.aiContext || "")
+    setIsSettingsDialogOpen(true)
   }
 
   const handleRenameSpace = () => {
@@ -1580,7 +1600,7 @@ export function InfiniteCanvas() {
           ? "Résume ce contenu et crée un plan d'action détaillé avec les points clés et les prochaines étapes."
           : "Summarize this content and create a detailed action plan with key points and next steps."
         
-        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider)
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider, currentSpace?.aiContext)
         const htmlContent = markdownToHtml(resultContent)
         
         const x = originElement.position.x + width + 50
@@ -1606,7 +1626,7 @@ export function InfiniteCanvas() {
           ? "Fais un résumé simple et concis de ce contenu."
           : "Make a simple and concise summary of this content."
         
-        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider)
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider, currentSpace?.aiContext)
         const htmlContent = markdownToHtml(resultContent)
         
         const x = originElement.position.x + width + 50
@@ -1628,7 +1648,7 @@ export function InfiniteCanvas() {
       }
 
       if (actionType === 'ideas') {
-        const ideas = await generateBrainstormingIdeas(topic, apiKey, 5, aiProvider)
+        const ideas = await generateBrainstormingIdeas(topic, apiKey, 5, aiProvider, currentSpace?.aiContext)
         if (ideas.length === 0) return
 
         const newElements = ideas.map((idea, index) => {
@@ -1652,7 +1672,7 @@ export function InfiniteCanvas() {
 
       } else if (actionType === 'tasks') {
         // Pour les TextCard, on utilise generateTasks comme pour PostItCard
-        const result = await generateTasks(topic, apiKey, aiProvider)
+        const result = await generateTasks(topic, apiKey, aiProvider, currentSpace?.aiContext)
         if (result.steps.length === 0) return
 
         const x = originElement.position.x + width + 50
@@ -1673,7 +1693,7 @@ export function InfiniteCanvas() {
         setElements(prev => [...prev, ...newElements])
 
       } else if (actionType === 'image') {
-        const result = await generateImage(topic, apiKey, aiProvider)
+        const result = await generateImage(topic, apiKey, aiProvider, undefined, currentSpace?.aiContext)
         if (!result.url) {
            if (result.error) alert(`Erreur image: ${result.error}`)
            return
@@ -1701,7 +1721,7 @@ export function InfiniteCanvas() {
           ? "Formate ce texte correctement en utilisant des titres (H1, H2, H3), du texte en gras (**texte**), des sauts de ligne et des retours à la ligne. Conserve le contenu mais améliore la structure et la lisibilité avec un formatage markdown approprié."
           : "Format this text properly using headings (H1, H2, H3), bold text (**text**), line breaks and newlines. Keep the content but improve the structure and readability with appropriate markdown formatting."
         
-        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider)
+        const resultContent = await runPrompt(instruction, [{ type: 'text', content: topic }], apiKey, aiProvider, currentSpace?.aiContext)
         const htmlContent = markdownToHtml(resultContent)
         
         // Mettre à jour la carte existante au lieu d'en créer une nouvelle
@@ -2026,7 +2046,7 @@ export function InfiniteCanvas() {
             if (inputs.length > 0 && !imageInput) {
                 console.log("Inputs texte détectés, génération prompt synthétique...")
                 const synthesisPrompt = stylePrefix + "Analyse ces inputs et crée une description détaillée et visuelle (en anglais pour DALL-E) pour générer une image qui correspond à la demande suivante : " + promptElement.content
-                imagePrompt = await runPrompt(synthesisPrompt, inputs, apiKey, provider)
+                imagePrompt = await runPrompt(synthesisPrompt, inputs, apiKey, provider, currentSpace?.aiContext)
                 console.log("Prompt synthétique généré:", imagePrompt)
             } else {
                 console.log("Pas d'inputs texte ou présence d'image, utilisation du prompt direct avec style:", style)
@@ -2036,7 +2056,7 @@ export function InfiniteCanvas() {
             }
             
             console.log("Appel generateImage avec prompt:", imagePrompt)
-            const result = await generateImage(imagePrompt, apiKey, provider, imageInput)
+            const result = await generateImage(imagePrompt, apiKey, provider, imageInput, currentSpace?.aiContext)
             console.log("Retour generateImage:", result)
 
             if (result.url) {
@@ -2047,7 +2067,7 @@ export function InfiniteCanvas() {
                 resultType = "text"
             }
         } else {
-            resultContent = await runPrompt(promptElement.content, inputs, apiKey, provider)
+            resultContent = await runPrompt(promptElement.content, inputs, apiKey, provider, currentSpace?.aiContext)
         }
 
         const pW = promptElement.width || 300
@@ -2565,6 +2585,17 @@ export function InfiniteCanvas() {
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
+                  <button
+                    type="button"
+                    className="ml-1 rounded-full p-1 text-gray-300 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openSettingsDialog(space)
+                      playSound("/sounds/tap_01.wav")
+                    }}
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </DropdownMenuItem>
             ))}
@@ -3320,6 +3351,13 @@ export function InfiniteCanvas() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <SettingsDialog 
+          open={isSettingsDialogOpen}
+          onOpenChange={setIsSettingsDialogOpen}
+          initialContext={settingsContext}
+          onSave={handleSaveContext}
+        />
 
       </div>
       

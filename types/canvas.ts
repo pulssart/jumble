@@ -222,4 +222,5 @@ export interface Space {
   id: string
   name: string
   lastModified: number
+  aiContext?: string
 }
