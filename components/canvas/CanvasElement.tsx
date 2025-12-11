@@ -320,6 +320,24 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
     }
   }
 
+  const handleCopyImage = async () => {
+    if (element.type !== 'image' || !element.src) return
+
+    try {
+        const response = await fetch(element.src)
+        const blob = await response.blob()
+        
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                [blob.type]: blob
+            })
+        ])
+    } catch (err) {
+        console.error("Failed to copy image to clipboard", err)
+        alert(language === "fr" ? "Impossible de copier l'image." : "Failed to copy image.")
+    }
+  }
+
   return (
     <Draggable
       nodeRef={nodeRef}
@@ -427,6 +445,12 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
                   {language === "fr" ? "Focus sur cette carte" : "Focus on this card"}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
+                {element.type === 'image' && (
+                    <ContextMenuItem onClick={handleCopyImage}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        {language === "fr" ? "Copier l'image" : "Copy Image"}
+                    </ContextMenuItem>
+                )}
                 <ContextMenuItem onClick={handleCopy}>
                   <Copy className="mr-2 h-4 w-4" />
                   {language === "fr" ? "Copier l'URL/Contenu" : "Copy URL/Content"}
