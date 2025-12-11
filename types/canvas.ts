@@ -105,6 +105,7 @@ export interface PromptElement extends BaseElement {
   isRunning?: boolean
   outputType?: "text" | "image"
   imageStyle?: "realistic" | "cartoon" | "anime" | "watercolor" | "oil-painting" | "sketch" | "wireframe"
+  aspectRatio?: "1:1" | "16:9" | "9:16" // Nouveau champ
 }
 
 export interface WebcamElement extends BaseElement {

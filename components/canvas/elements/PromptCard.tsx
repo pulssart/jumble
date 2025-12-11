@@ -190,24 +190,25 @@ export function PromptCard({ element, onUpdate, onRun, hasConnectedInputs = fals
           </DropdownMenu>
         )}
         {element.outputType === 'image' && (
+          <div className="flex gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white justify-between"
+                className="flex-1 bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white justify-between"
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                <span className="text-xs">
+                <span className="text-xs truncate">
                   {element.imageStyle 
                     ? IMAGE_STYLES[language][element.imageStyle]
-                    : (language === "fr" ? "Style d'image" : "Image style")}
+                    : (language === "fr" ? "Style" : "Style")}
                 </span>
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="w-3 h-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
-              className="bg-gray-800 border-gray-700 text-gray-100 min-w-[200px]"
+              className="bg-gray-800 border-gray-700 text-gray-100 min-w-[150px]"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <DropdownMenuItem
@@ -254,6 +255,7 @@ export function PromptCard({ element, onUpdate, onRun, hasConnectedInputs = fals
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         )}
         <Textarea
           value={prompt}

@@ -59,11 +59,20 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
       const finalWidth = Math.max(100, startWidth + (window.event as MouseEvent).clientX - startX)
       const finalHeight = finalWidth / aspectRatio
 
+      // On fige la hauteur calculée dans le state pour éviter les sauts si l'image charge mal
+      // Mais le rendu principal restera en 'auto' via le composant, sauf si on veut supporter le ratio libre non-image
+      // Ici pour une ImageCard, le ratio est TOUJOURS celui de l'image.
+      // Donc on met juste à jour la largeur, la hauteur suivra.
+      
       onUpdate({
         ...element,
         width: Math.round(finalWidth),
+        // On ne force pas la hauteur dans le modèle, on la laisse suivre le ratio image
+        // sauf si on veut stocker pour persistance. On stocke la hauteur théorique.
         height: Math.round(finalHeight)
       })
+      
+      setDimensions({ width: Math.round(finalWidth), height: Math.round(finalHeight) })
     };
 
     document.addEventListener("mousemove", handleMouseMove)
@@ -78,41 +87,51 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
     
     const currentWidth = element.width || 300
     const currentHeight = element.height || 200
-    const currentRatio = currentWidth / currentHeight
+    
+    // Correction pour les bordures (border-1 = 1px de chaque côté = 2px total)
+    // Le ratio doit s'appliquer à la zone de contenu (inside), pas à la boîte externe (border-box)
+    const borderOffset = 2 
+    
+    const contentWidth = currentWidth - borderOffset
+    const contentHeight = currentHeight - borderOffset
+    const currentContentRatio = contentWidth / contentHeight
 
-    // Si les dimensions ne sont pas définies OU si le ratio est incorrect (avec une marge d'erreur)
-    // On redimensionne pour coller à l'image
-    if (!element.width || Math.abs(currentRatio - naturalRatio) > 0.05) {
-      let newWidth = currentWidth
-      let newHeight = currentWidth / naturalRatio
+    // Calculer les dimensions cibles basées sur l'image naturelle
+    // On conserve la largeur actuelle si possible, sinon on initialise
+    let targetWidth = currentWidth
+    
+    // Calcul de la hauteur cible pour respecter le ratio du contenu
+    // Hauteur Contenu = Largeur Contenu / Ratio Image
+    // Hauteur Totale = Hauteur Contenu + Bordures
+    let targetHeight = ((targetWidth - borderOffset) / naturalRatio) + borderOffset
 
-      // Si c'est un chargement initial (dimensions par défaut ou très petites), on applique une logique de "fit" intelligent
-      if (!element.width || (element.width === 300 && element.height === 200)) {
+    // Si c'est un chargement initial ou si les dimensions ne sont pas encore définies
+    if (!element.width || (element.width === 300 && element.height === 200) || (element.width === 400 && element.height === 400)) {
         const maxWidth = 600
         const maxHeight = 600
         
-        newWidth = naturalWidth
-        newHeight = naturalHeight
+        // Pour l'initialisation, on part de la taille naturelle + bordures
+        targetWidth = naturalWidth + borderOffset
+        targetHeight = naturalHeight + borderOffset
 
-        if (newWidth > maxWidth || newHeight > maxHeight) {
-          const scale = Math.min(maxWidth / newWidth, maxHeight / newHeight)
-          newWidth *= scale
-          newHeight *= scale
+        if (targetWidth > maxWidth || targetHeight > maxHeight) {
+          const scale = Math.min(maxWidth / targetWidth, maxHeight / targetHeight)
+          targetWidth *= scale
+          targetHeight *= scale
         }
-      }
+    }
 
-      const finalWidth = Math.round(newWidth)
-      const finalHeight = Math.round(newHeight)
+    const finalWidth = Math.round(targetWidth)
+    const finalHeight = Math.round(targetHeight)
 
-      // Mise à jour seulement si changement significatif
-      if (Math.abs(finalWidth - currentWidth) > 1 || Math.abs(finalHeight - currentHeight) > 1) {
-          onUpdate({
-            ...element,
-            width: finalWidth,
-            height: finalHeight,
-          })
-          setDimensions({ width: finalWidth, height: finalHeight })
-      }
+    // Forcer la mise à jour si les dimensions diffèrent
+    if (Math.abs(finalWidth - currentWidth) > 1 || Math.abs(finalHeight - currentHeight) > 1) {
+        onUpdate({
+          ...element,
+          width: finalWidth,
+          height: finalHeight,
+        })
+        setDimensions({ width: finalWidth, height: finalHeight })
     }
     setImageLoaded(true)
   }
@@ -273,15 +292,17 @@ export function ImageCard({ element, onUpdate }: ImageCardProps) {
         className="drag-handle rounded-xl shadow-lg overflow-hidden bg-white border dark:border-none border-gray-200 relative cursor-grab active:cursor-grabbing group flex items-center justify-center"
         style={{
             width: dimensions.width,
-            height: dimensions.height,
-            transition: 'width 0.05s, height 0.05s'
+            // On laisse la hauteur en auto pour coller parfaitement à l'image, sauf si on redimensionne
+            height: 'auto',
+            minHeight: 100,
+            transition: 'width 0.05s'
         }}
     >
       <img
         ref={imgRef}
         src={element.src}
         alt={element.alt || "Image"}
-        className="block select-none pointer-events-none w-full h-full object-contain"
+        className="block select-none pointer-events-none w-full h-auto"
         draggable={false}
         onLoad={handleImageLoad}
         onError={() => setImageError(true)}

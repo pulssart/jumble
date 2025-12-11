@@ -134,19 +134,24 @@ export async function generateImage(
   apiKey: string,
   provider: AIProvider = "openai",
   imageInput?: string, // Base64 de l'image d'entrée optionnelle
-  context?: string
+  context?: string,
+  aspectRatio?: "1:1" | "16:9" | "9:16"
 ): Promise<{ url: string | null, error?: string }> {
   try {
     const finalPrompt = context ? `CONTEXTE GLOBAL DU PROJET : ${context}. PROMPT IMAGE : ${prompt}` : prompt
 
     if (provider === "openai") {
-    // OpenAI ne supporte pas l'image-to-image via cette API pour l'instant (DALL-E 2 edit est différent)
-    // On ignore l'image input pour OpenAI et on fait du text-to-image
+    // OpenAI ne supporte pas l'image-to-image via cette API pour l'instant
+    // DALL-E 3 supporte 1024x1024, 1024x1792 (Portrait), 1792x1024 (Paysage)
+    let size = "1024x1024"
+    if (aspectRatio === "16:9") size = "1792x1024"
+    if (aspectRatio === "9:16") size = "1024x1792"
+
     const body = JSON.stringify({
         model: "dall-e-3",
         prompt: finalPrompt,
         n: 1,
-        size: "1024x1024",
+        size: size,
         quality: "standard",
         response_format: "b64_json"
       })
@@ -182,8 +187,23 @@ export async function generateImage(
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`
         
+        let geminiAspectRatio = "1:1"
+        if (aspectRatio === "16:9") geminiAspectRatio = "16:9"
+        if (aspectRatio === "9:16") geminiAspectRatio = "9:16"
+
         const parts: any[] = [{ text: finalPrompt }]
         
+        // Pour Gemini via REST, le ratio est souvent inféré ou nécessite un paramètre de configuration spécifique
+        // Dans l'API standard generateContent, on peut ajouter des instructions de ratio dans le prompt
+        // ou utiliser generationConfig si supporté pour les images (dépend de la version exacte)
+        
+        // Ajout explicite au prompt pour Gemini, car l'API REST v1beta simple ne prend pas toujours 'aspectRatio' en top-level
+        parts[0].text = `${finalPrompt} (Aspect Ratio: ${geminiAspectRatio})`
+        
+        const generationConfig = {
+            responseMimeType: "application/json"
+        }
+
         if (imageInput) {
             console.log("Image input detected for Gemini")
             // Extraction du base64 pur (sans le header data:image/...)

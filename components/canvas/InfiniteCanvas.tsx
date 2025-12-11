@@ -2014,8 +2014,18 @@ export function InfiniteCanvas() {
         let resultType: "text" | "image" = "text"
 
         if (promptElement.outputType === 'image') {
-            console.log("Début génération image. Mode: Image")
             let imagePrompt = promptElement.content
+            let detectedRatio: "1:1" | "16:9" | "9:16" = "1:1"
+            
+            // Analyse simple du prompt pour détecter des mots clés de format
+            const lowerPrompt = imagePrompt.toLowerCase()
+            if (lowerPrompt.includes("landscape") || lowerPrompt.includes("paysage") || lowerPrompt.includes("wide") || lowerPrompt.includes("large") || lowerPrompt.includes("panoram") || lowerPrompt.includes("16:9")) {
+                detectedRatio = "16:9"
+            } else if (lowerPrompt.includes("portrait") || lowerPrompt.includes("vertical") || lowerPrompt.includes("tall") || lowerPrompt.includes("haut") || lowerPrompt.includes("9:16")) {
+                detectedRatio = "9:16"
+            }
+
+            console.log("Ratio détecté automatiquement:", detectedRatio)
             
             // Ajouter le style au prompt
             const style = promptElement.imageStyle
@@ -2056,7 +2066,7 @@ export function InfiniteCanvas() {
             }
             
             console.log("Appel generateImage avec prompt:", imagePrompt)
-            const result = await generateImage(imagePrompt, apiKey, provider, imageInput, currentSpace?.aiContext)
+            const result = await generateImage(imagePrompt, apiKey, provider, imageInput, currentSpace?.aiContext, detectedRatio)
             console.log("Retour generateImage:", result)
 
             if (result.url) {
