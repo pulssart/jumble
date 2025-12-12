@@ -451,7 +451,7 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
           // La top bar reste au-dessus via son propre z-index / stacking context.
           zIndex: isDragging
             ? (element.type === "group" ? 999998 : 999999)
-            : (forcedZIndex ?? element.zIndex || 1),
+            : ((forcedZIndex ?? element.zIndex) || 1),
           willChange: isDragging ? "transform" : "auto",
           opacity: isFocused ? 1 : isDimmed ? 0.15 : (isConnected || isHovered ? 1 : 0.3),
           filter: isFocused
