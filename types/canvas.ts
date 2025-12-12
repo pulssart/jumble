@@ -1,4 +1,28 @@
-export type ElementType = "image" | "text" | "task" | "postit" | "youtube" | "spotify" | "figma" | "notion" | "linear" | "linkedin" | "twitter" | "link" | "prompt" | "webcam" | "gif" | "clock" | "applemusic" | "instagram" | "googlemaps" | "weather" | "stock" | "crypto" | "rss"
+export type ElementType =
+  | "image"
+  | "text"
+  | "task"
+  | "postit"
+  | "youtube"
+  | "spotify"
+  | "figma"
+  | "notion"
+  | "linear"
+  | "linkedin"
+  | "twitter"
+  | "link"
+  | "prompt"
+  | "webcam"
+  | "gif"
+  | "clock"
+  | "applemusic"
+  | "instagram"
+  | "googlemaps"
+  | "weather"
+  | "stock"
+  | "crypto"
+  | "rss"
+  | "group"
 
 export interface Position {
   x: number
@@ -194,6 +218,31 @@ export interface RSSElement extends BaseElement {
   isLoading?: boolean
 }
 
+export interface GroupElement extends BaseElement {
+  type: "group"
+  title: string
+  collapsed?: boolean
+  /**
+   * Taille (px) du rendu quand le groupe est minimisé (icône dossier).
+   */
+  collapsedSize?: number
+  /**
+   * Taille minimale (px) voulue par l'utilisateur via resize manuel.
+   * Le groupe ne rétrécira pas en dessous, même si les enfants sont plus petits.
+   */
+  minWidth?: number
+  minHeight?: number
+  /**
+   * Padding autour des cards dans le groupe (en px, coordonnées canvas).
+   * Le groupe est recalculé automatiquement à partir de ses enfants.
+   */
+  padding?: number
+  /**
+   * Hauteur de l'entête (en px, coordonnées canvas) réservée au titre / poignée.
+   */
+  headerHeight?: number
+}
+
 export type CanvasElement =
   | ImageElement
   | TextElement
@@ -218,6 +267,7 @@ export type CanvasElement =
   | StockElement
   | CryptoElement
   | RSSElement
+  | GroupElement
 
 export interface Space {
   id: string

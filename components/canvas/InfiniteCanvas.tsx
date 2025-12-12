@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { generateBrainstormingIdeas, generateTasks, generateImage, runPrompt } from "@/lib/ai"
-import { CanvasElement, PromptElement, Space } from "@/types/canvas"
+import { CanvasElement, GroupElement, PromptElement, Space } from "@/types/canvas"
 import { ActionType } from "@/types/action"
 import { CanvasElementComponent } from "./CanvasElement"
 import { SettingsDialog } from "./SettingsDialog"
@@ -133,6 +133,9 @@ export function InfiniteCanvas() {
 
   // États pour la sélection multiple
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  
+  // État pour tracker le groupe en cours de drag (pour le z-index des enfants)
+  const [draggingGroupId, setDraggingGroupId] = useState<string | null>(null)
   
   // Date de la dernière sauvegarde cloud
   const [lastBackupDate, setLastBackupDate] = useState<Date | null>(null)
@@ -596,12 +599,64 @@ export function InfiniteCanvas() {
   const handleUpdateElement = useCallback((updatedElement: CanvasElement) => {
     setElements((prev) => {
       const currentSelectedIds = selectedIdsRef.current
+
+      const oldElement = prev.find(el => el.id === updatedElement.id)
+      if (!oldElement) {
+        return prev.map(el => (el.id === updatedElement.id ? updatedElement : el))
+      }
+
+      // Déplacement d'un groupe : déplacer aussi ses enfants (commit au drop)
+      if (oldElement.type === "group" && updatedElement.type === "group") {
+        const dx = updatedElement.position.x - oldElement.position.x
+        const dy = updatedElement.position.y - oldElement.position.y
+
+        if (dx !== 0 || dy !== 0) {
+          let next = prev.map(el => {
+            if (el.id === updatedElement.id) return updatedElement
+            if (el.parentId === updatedElement.id) {
+              // Reset du transform CSS temporaire avant de mettre à jour l'état
+              const domEl = document.querySelector(`[data-id="${el.id}"]`) as HTMLElement | null
+              if (domEl) {
+                domEl.style.transform = ""
+                domEl.style.transition = ""
+                domEl.style.willChange = "auto"
+                domEl.style.zIndex = ""
+              }
+
+              return {
+                ...el,
+                position: {
+                  x: el.position.x + dx,
+                  y: el.position.y + dy,
+                },
+              }
+            }
+            return el
+          })
+
+          // Recalage complet (bounds + z-index) pour éviter que les enfants passent sous le fond
+          next = recomputeGroupInList(next, updatedElement.id)
+          return next
+        }
+
+        let next = prev.map((el) => (el.id === updatedElement.id ? updatedElement : el))
+
+        // Toggle collapsed: si on expand, recalculer tout de suite les bounds depuis les enfants
+        if (oldElement.collapsed && !updatedElement.collapsed) {
+          next = recomputeGroupInList(next, updatedElement.id)
+        }
+
+        // Si on collapse, forcer une taille cohérente (dossier)
+        if (!oldElement.collapsed && updatedElement.collapsed) {
+          const size = (updatedElement as any).collapsedSize ?? 160
+          next = next.map(el => el.id === updatedElement.id ? ({ ...el, width: size, height: size } as any) : el)
+        }
+
+        return next
+      }
       
       // Si l'élément mis à jour fait partie de la sélection et qu'il y a plusieurs éléments sélectionnés
       if (currentSelectedIds.includes(updatedElement.id) && currentSelectedIds.length > 1) {
-        const oldElement = prev.find(el => el.id === updatedElement.id)
-        if (!oldElement) return prev.map(el => (el.id === updatedElement.id ? updatedElement : el))
-
         // Calculer le delta de déplacement
         const dx = updatedElement.position.x - oldElement.position.x
         const dy = updatedElement.position.y - oldElement.position.y
@@ -610,31 +665,50 @@ export function InfiniteCanvas() {
         // On exclut les mises à jour qui ne sont pas des déplacements (ex: resize, content change)
         // Pour savoir si c'est un déplacement, on regarde si la position a changé
         if (dx !== 0 || dy !== 0) {
-          return prev.map(el => {
+          let next = prev.map(el => {
             if (el.id === updatedElement.id) return updatedElement
             if (currentSelectedIds.includes(el.id)) {
-               // Reset du transform CSS temporaire avant de mettre à jour l'état
-               const domEl = document.querySelector(`[data-id="${el.id}"]`) as HTMLElement
-               if (domEl) {
-                 domEl.style.transform = ''
-                 domEl.style.transition = ''
-                 domEl.style.willChange = 'auto'
-               }
-               
-               return {
-                 ...el,
-                 position: {
-                   x: el.position.x + dx,
-                   y: el.position.y + dy
-                 }
-               }
+              // Reset du transform CSS temporaire avant de mettre à jour l'état
+              const domEl = document.querySelector(`[data-id="${el.id}"]`) as HTMLElement | null
+              if (domEl) {
+                domEl.style.transform = ""
+                domEl.style.transition = ""
+                domEl.style.willChange = "auto"
+              }
+              
+              return {
+                ...el,
+                position: {
+                  x: el.position.x + dx,
+                  y: el.position.y + dy
+                }
+              }
             }
             return el
           })
+
+          // Recalculer les groupes impactés (si des éléments sélectionnés appartiennent à un groupe)
+          const affectedParentIds = new Set<string>()
+          currentSelectedIds.forEach(id => {
+            const el = next.find(e => e.id === id)
+            if (el?.parentId) affectedParentIds.add(el.parentId)
+          })
+          affectedParentIds.forEach(pid => {
+            next = recomputeGroupInList(next, pid)
+          })
+
+          return next
         }
       }
 
-      return prev.map((el) => (el.id === updatedElement.id ? updatedElement : el))
+      let next = prev.map((el) => (el.id === updatedElement.id ? updatedElement : el))
+
+      // Si l'élément appartient à un groupe, recalculer le groupe (move/resize/contenu)
+      if (updatedElement.parentId) {
+        next = recomputeGroupInList(next, updatedElement.parentId)
+      }
+
+      return next
     })
   }, [])
 
@@ -684,6 +758,267 @@ export function InfiniteCanvas() {
        })
     })
   }
+
+  const getElementBox = (el: CanvasElement) => {
+    const w = el.width ?? 200
+    const h = el.height ?? 100
+    return {
+      left: el.position.x,
+      top: el.position.y,
+      right: el.position.x + w,
+      bottom: el.position.y + h,
+    }
+  }
+
+  const computeGroupFromChildren = (group: GroupElement, children: CanvasElement[]): GroupElement => {
+    const padding = group.padding ?? 28
+    const headerHeight = group.headerHeight ?? 34
+
+    // En mode minimisé, on garde la position (déplacement manuel) et on force une taille "dossier"
+    if (group.collapsed) {
+      const size = group.collapsedSize ?? 160
+      return {
+        ...group,
+        padding,
+        headerHeight,
+        width: size,
+        height: size,
+      }
+    }
+
+    const boxes = children.map(getElementBox)
+    const minX = Math.min(...boxes.map(b => b.left))
+    const minY = Math.min(...boxes.map(b => b.top))
+    const maxX = Math.max(...boxes.map(b => b.right))
+    const maxY = Math.max(...boxes.map(b => b.bottom))
+
+    const computedWidth = (maxX - minX) + padding * 2
+    const computedHeight = (maxY - minY) + padding * 2 + headerHeight
+
+    const width = Math.max(computedWidth, group.minWidth ?? 0)
+    const height = Math.max(computedHeight, group.minHeight ?? 0)
+
+    return {
+      ...group,
+      padding,
+      headerHeight,
+      position: { x: minX - padding, y: minY - padding - headerHeight },
+      width,
+      height,
+    }
+  }
+
+  const recomputeGroupInList = (list: CanvasElement[], groupId: string): CanvasElement[] => {
+    const group = list.find(el => el.id === groupId && el.type === "group") as GroupElement | undefined
+    if (!group) return list
+
+    const children = list.filter(el => el.parentId === groupId && el.type !== "group")
+    if (children.length === 0) {
+      // Un groupe vide n'a plus de raison d'exister
+      return list.filter(el => el.id !== groupId)
+    }
+
+    // 1) Recalculer la géométrie du groupe
+    const updated = computeGroupFromChildren(group, children)
+
+    // 2) Garantir l'invariant z-index : le fond du groupe doit toujours être derrière ses enfants.
+    // Si besoin, on remonte les enfants pour que minChildZ >= 2, puis groupZ = minChildZ - 1.
+    const childZs = children.map(c => c.zIndex ?? 1)
+    const minChildZ = Math.min(...childZs)
+    const bump = minChildZ <= 1 ? (2 - minChildZ) : 0
+    const nextMinChildZ = minChildZ + bump
+    const nextGroupZ = Math.max(1, nextMinChildZ - 1)
+
+    return list.map(el => {
+      if (el.id === groupId) return { ...updated, zIndex: nextGroupZ }
+      if (el.parentId === groupId) {
+        return { ...el, zIndex: (el.zIndex ?? 1) + bump }
+      }
+      return el
+    })
+  }
+
+  // Resélectionner automatiquement le dernier groupe créé (évite le race avec setElements)
+  const lastCreatedGroupIdRef = useRef<string | null>(null)
+
+  const createGroup = useCallback((ids: string[]) => {
+    if (ids.length === 0) return
+
+    // Si un "câble" est en cours (ligne jaune), on annule avant de grouper
+    setConnectionStart(null)
+    setMousePos(null)
+
+    setElements(prev => {
+      const idSet = new Set(ids)
+      const children = prev.filter(el => idSet.has(el.id) && el.type !== "group")
+      if (children.length === 0) return prev
+
+      const groupId = generateId()
+      lastCreatedGroupIdRef.current = groupId
+
+      const minZ = Math.min(...children.map(el => el.zIndex ?? 1))
+      const needsBump = minZ <= 1
+      const zBump = needsBump ? 1 : 0
+      const groupBase: GroupElement = {
+        id: groupId,
+        type: "group",
+        title: language === "fr" ? "Groupe" : "Group",
+        position: { x: 0, y: 0 },
+        zIndex: needsBump ? 1 : (minZ - 1),
+        collapsed: false,
+        collapsedSize: 160,
+        padding: 28,
+        headerHeight: 34,
+      }
+
+      const groupEl = computeGroupFromChildren(groupBase, children)
+
+      const oldParentIds = new Set<string>()
+      children.forEach(c => {
+        if (c.parentId) oldParentIds.add(c.parentId)
+      })
+
+      let next: CanvasElement[] = prev.map(el => {
+        if (idSet.has(el.id) && el.type !== "group") {
+          return { ...el, parentId: groupId, zIndex: (el.zIndex ?? 1) + zBump }
+        }
+        return el
+      })
+
+      next = [...next, groupEl]
+      oldParentIds.forEach(pid => {
+        next = recomputeGroupInList(next, pid)
+      })
+
+      return next
+    })
+  }, [language])
+
+  const handleGroupSelection = useCallback(() => {
+    const ids = selectedIdsRef.current.filter(id => {
+      const el = elementsRef.current.find(e => e.id === id)
+      return !!el && el.type !== "group"
+    })
+    if (ids.length === 0) return
+    createGroup(ids)
+  }, [createGroup])
+
+  useEffect(() => {
+    if (!lastCreatedGroupIdRef.current) return
+    const gid = lastCreatedGroupIdRef.current
+    lastCreatedGroupIdRef.current = null
+    setSelectedIds([gid])
+  }, [elements])
+
+  const handleGroupElement = useCallback((id: string) => {
+    createGroup([id])
+  }, [createGroup])
+
+  const handleUngroup = useCallback((groupId: string) => {
+    setElements(prev => {
+      const hasGroup = prev.some(el => el.id === groupId && el.type === "group")
+      if (!hasGroup) return prev
+
+      const childrenIds: string[] = prev
+        .filter(el => el.parentId === groupId && el.type !== "group")
+        .map(el => el.id)
+
+      const next = prev
+        .filter(el => el.id !== groupId)
+        .map(el => (el.parentId === groupId ? { ...el, parentId: undefined } : el))
+
+      // Garder la sélection sur les enfants
+      setSelectedIds(childrenIds)
+      return next
+    })
+  }, [])
+
+  const handleGroupDragStart = useCallback((groupId: string) => {
+    setDraggingGroupId(groupId)
+  }, [])
+
+  const handleGroupDragEnd = useCallback(() => {
+    setDraggingGroupId(null)
+  }, [])
+
+  const handleGroupDrag = useCallback((groupId: string, x: number, y: number) => {
+    const group = elementsRef.current.find(el => el.id === groupId && el.type === "group")
+    if (!group) return
+
+    const dx = x - group.position.x
+    const dy = y - group.position.y
+
+    elementsRef.current.forEach(child => {
+      if (child.parentId !== groupId) return
+      const domEl = document.querySelector(`[data-id="${child.id}"]`) as HTMLElement | null
+      if (!domEl) return
+      domEl.style.transition = "none"
+      // Le z-index est maintenant géré via React (draggingGroupId), pas via DOM
+      domEl.style.transform = `translate(${child.position.x + dx}px, ${child.position.y + dy}px)`
+    })
+  }, [])
+
+  const handleAddToExistingGroup = useCallback((elementId: string, groupId: string) => {
+    // On annule un éventuel mode connexion (ligne jaune) avant de modifier la structure
+    setConnectionStart(null)
+    setMousePos(null)
+
+    setElements(prev => {
+      const group = prev.find(el => el.id === groupId && el.type === "group") as GroupElement | undefined
+      const target = prev.find(el => el.id === elementId)
+      if (!group || !target || target.type === "group") return prev
+
+      const oldParentId = target.parentId
+      const padding = group.padding ?? 28
+      const headerHeight = group.headerHeight ?? 34
+      const siblingCount = prev.filter(el => el.parentId === groupId && el.type !== "group").length
+      const STACK_OFFSET = 22
+
+      const nextPos = {
+        x: group.position.x + padding + siblingCount * STACK_OFFSET,
+        y: group.position.y + padding + headerHeight + siblingCount * STACK_OFFSET,
+      }
+
+      let next = prev.map(el => {
+        if (el.id !== elementId) return el
+        const minChildZ = (group.zIndex ?? 1) + 1
+        return {
+          ...el,
+          parentId: groupId,
+          position: nextPos,
+          zIndex: Math.max(el.zIndex ?? 1, minChildZ),
+        }
+      })
+
+      if (oldParentId && oldParentId !== groupId) {
+        next = recomputeGroupInList(next, oldParentId)
+      }
+      next = recomputeGroupInList(next, groupId)
+      return next
+    })
+
+    setSelectedIds([elementId])
+  }, [])
+
+  const handleRemoveFromGroup = useCallback((elementId: string) => {
+    setElements(prev => {
+      const target = prev.find(el => el.id === elementId)
+      if (!target || !target.parentId || target.type === "group") return prev
+
+      const oldParentId = target.parentId
+
+      let next = prev.map(el => {
+        if (el.id !== elementId) return el
+        return { ...el, parentId: undefined }
+      })
+
+      // Recalculer le groupe (peut être supprimé s'il devient vide)
+      next = recomputeGroupInList(next, oldParentId)
+      return next
+    })
+
+    setSelectedIds([elementId])
+  }, [])
 
   const generateId = () => crypto.randomUUID()
 
@@ -2349,6 +2684,9 @@ export function InfiniteCanvas() {
             if (!el.parentId) return null
             const parent = elements.find(p => p.id === el.parentId)
             if (!parent) return null
+            // `parentId` sert aussi à des relations internes (ex: grouping).
+            // On n'affiche pas de câbles jaunes pour les groupes.
+            if (parent.type === "group") return null
 
             const pW = parent.width || 220
             const pH = parent.height || 220
@@ -2470,11 +2808,43 @@ export function InfiniteCanvas() {
           // Vérifier si une connexion est en cours
           const isConnecting = connectionStart !== null
           
+          const groups = elements.filter(e => e.type === "group") as GroupElement[]
+          const collapsedGroupIds = new Set(groups.filter(g => g.collapsed).map(g => g.id))
+
+          // Z-index effectifs : garantit que le fond du groupe reste sous ses enfants (anti-bug visuel).
+          const effectiveZ = new Map<string, number>()
+          elements.forEach(el => effectiveZ.set(el.id, el.zIndex ?? 1))
+
+          groups.forEach(g => {
+            const children = elements.filter(e => e.parentId === g.id && e.type !== "group")
+            if (children.length === 0) return
+            const minChildZ = Math.min(...children.map(c => effectiveZ.get(c.id) ?? (c.zIndex ?? 1)))
+            const groupZ = Math.max(1, minChildZ - 1)
+            effectiveZ.set(g.id, groupZ)
+            children.forEach(c => {
+              const cz = effectiveZ.get(c.id) ?? (c.zIndex ?? 1)
+              if (cz <= groupZ) effectiveZ.set(c.id, groupZ + 1)
+            })
+          })
+
+          // Si un groupe est en train d'être draggé, ses enfants passent au-dessus de tout
+          if (draggingGroupId) {
+            elements.forEach(el => {
+              if (el.parentId === draggingGroupId) {
+                effectiveZ.set(el.id, 999999)
+              }
+            })
+          }
+
           return elements.map((element) => {
+            // Si l'élément est enfant d'un groupe minimisé : on le cache (sans le supprimer)
+            if (element.parentId && collapsedGroupIds.has(element.parentId)) {
+              return null
+            }
             // Si aucune connexion n'existe, tous les éléments sont considérés comme "connectés" (opacité 100%)
             // Sinon, seuls les éléments du groupe connecté sont à 100%
             // Les éléments avec un parentId sont aussi considérés comme connectés (outputs)
-            const isConnected = !hasAnyConnection || connectedElements.has(element.id) || !!element.parentId
+            const isConnected = !hasAnyConnection || connectedElements.has(element.id) || !!element.parentId || element.type === "group"
             const isFocused = focusState?.id === element.id
             const isDimmed = !!focusState && focusState.id !== element.id
             
@@ -2487,6 +2857,7 @@ export function InfiniteCanvas() {
               <CanvasElementComponent
                 key={element.id}
                 element={element}
+                forcedZIndex={effectiveZ.get(element.id)}
                 isSelected={selectedIds.includes(element.id)}
                 selectionCount={selectedIds.length}
                 isConnected={isConnected}
@@ -2499,10 +2870,19 @@ export function InfiniteCanvas() {
                 onDelete={handleDeleteElement}
                 onDeleteSelection={() => setShowMultiDeleteWarning(true)}
                 onOrganizeSelection={handleOrganizeSelection}
+                onGroupSelection={handleGroupSelection}
+                onGroupElement={handleGroupElement}
+                onUngroup={handleUngroup}
+                existingGroups={groups.map(g => ({ id: g.id, title: g.title }))}
+                onAddToExistingGroup={handleAddToExistingGroup}
+                onRemoveFromGroup={handleRemoveFromGroup}
                 onBringToFront={handleBringToFront}
                 getSnappingPosition={getSnappingPosition}
                 onSnap={handleSnapLines}
                 onDrag={handleElementDrag}
+                onGroupDrag={handleGroupDrag}
+                onGroupDragStart={handleGroupDragStart}
+                onGroupDragEnd={handleGroupDragEnd}
                 onAIAction={handleAIAction}
                 onConnectStart={handleConnectStart}
                 onConnectEnd={handleConnectEnd}

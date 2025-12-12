@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import Draggable from "react-draggable"
-import { CanvasElement } from "@/types/canvas"
+import { CanvasElement, GroupElement } from "@/types/canvas"
 import { ActionType } from "@/types/action"
 import { useLanguage } from "@/lib/language"
 import { ImageCard } from "./elements/ImageCard"
@@ -28,7 +28,8 @@ import { WeatherCard } from "./elements/WeatherCard"
 import { StockCard } from "./elements/StockCard"
 import { CryptoCard } from "./elements/CryptoCard"
 import { RSSCard } from "./elements/RSSCard"
-import { X, Copy, Trash2, Wand2 } from "lucide-react"
+import { GroupCard } from "./elements/GroupCard"
+import { X, Copy, Trash2, Wand2, FolderPlus, FolderMinus, MoveDiagonal2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   ContextMenu,
@@ -36,10 +37,14 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
 } from "@/components/ui/context-menu"
 
 interface CanvasElementProps {
   element: CanvasElement
+  forcedZIndex?: number
   isSelected?: boolean
   selectionCount?: number
   isConnected?: boolean
@@ -52,9 +57,18 @@ interface CanvasElementProps {
   onBringToFront: (id: string) => void
   onSelect?: (id: string, multi: boolean) => void
   onOrganizeSelection?: () => void
+  onGroupSelection?: () => void
+  onGroupElement?: (id: string) => void
+  onUngroup?: (groupId: string) => void
+  existingGroups?: { id: string; title: string }[]
+  onAddToExistingGroup?: (elementId: string, groupId: string) => void
+  onRemoveFromGroup?: (elementId: string) => void
   getSnappingPosition: (id: string, x: number, y: number) => { x: number; y: number; snappedX?: number | null; snappedY?: number | null }
   onSnap?: (lines: { x: number | null; y: number | null; activeX?: number; activeY?: number }) => void
   onDrag?: (id: string, x: number, y: number) => void
+  onGroupDrag?: (groupId: string, x: number, y: number) => void
+  onGroupDragStart?: (groupId: string) => void
+  onGroupDragEnd?: () => void
   onAIAction?: (id: string, content: string, actionType: ActionType) => void
   onConnectStart: (elementId: string, x: number, y: number) => void
   onConnectEnd: (elementId: string) => void
@@ -67,6 +81,7 @@ interface CanvasElementProps {
 
 export const CanvasElementComponent = React.memo(function CanvasElementComponent({
   element,
+  forcedZIndex,
   isSelected = false,
   selectionCount = 0,
   isConnected = true,
@@ -79,9 +94,18 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   onBringToFront,
   onSelect,
   onOrganizeSelection,
+  onGroupSelection,
+  onGroupElement,
+  onUngroup,
+  existingGroups = [],
+  onAddToExistingGroup,
+  onRemoveFromGroup,
   getSnappingPosition,
   onSnap,
   onDrag: onDragProp,
+  onGroupDrag,
+  onGroupDragStart,
+  onGroupDragEnd,
   onAIAction,
   onConnectStart,
   onConnectEnd,
@@ -94,12 +118,22 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
   const { language } = useLanguage()
   const [isHovered, setIsHovered] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isResizingGroup, setIsResizingGroup] = useState(false)
   const [currentPos, setCurrentPos] = useState(element.position)
   const nodeRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
+  const groupResizeStartRef = useRef<{
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
 
   // Observer la taille réelle de l'élément pour ajuster les câbles
   useEffect(() => {
+    // Les groupes ont une taille pilotée par la logique (bounds des enfants / mode minimisé).
+    // On évite que le ResizeObserver écrase width/height.
+    if (element.type === "group") return
     if (!nodeRef.current) return
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -138,6 +172,42 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
     }
   }, [element.position, isDragging])
 
+  useEffect(() => {
+    if (!isResizingGroup) return
+
+    const onMove = (e: MouseEvent) => {
+      if (!groupResizeStartRef.current) return
+      const start = groupResizeStartRef.current
+      const dx = (e.clientX - start.x) / scale
+      const dy = (e.clientY - start.y) / scale
+
+      const minW = 180
+      const minH = 120
+      const newW = Math.max(minW, start.width + dx)
+      const newH = Math.max(minH, start.height + dy)
+
+      onUpdate({
+        ...element,
+        width: Math.round(newW),
+        height: Math.round(newH),
+        minWidth: Math.round(newW),
+        minHeight: Math.round(newH),
+      } as any)
+    }
+
+    const onUp = () => {
+      setIsResizingGroup(false)
+      groupResizeStartRef.current = null
+    }
+
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+  }, [isResizingGroup, element, onUpdate, scale])
+
   const handleStart = (e: any, data: { x: number; y: number }) => {
     // Play sound on grab
     if (soundEnabled) {
@@ -149,7 +219,13 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
     setIsDragging(true)
     dragStartPosRef.current = { x: element.position.x, y: element.position.y }
     dragCurrentPosRef.current = { x: data.x, y: data.y }
-    onBringToFront(element.id)
+    // Un groupe doit rester en arrière-plan (fond), on évite de le mettre au premier plan
+    if (element.type !== "group") {
+      onBringToFront(element.id)
+    } else {
+      // Signaler le début du drag du groupe (pour le z-index des enfants via React)
+      onGroupDragStart?.(element.id)
+    }
     // Selection logic
     if (onSelect) {
         // e.shiftKey permet la multiselection clic par clic
@@ -194,6 +270,11 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
       const dy = finalPos.y - dragStartPosRef.current.y
       onDragProp(element.id, finalPos.x, finalPos.y)
     }
+
+    // Signaler la fin du drag du groupe (reset z-index des enfants via React)
+    if (element.type === "group") {
+      onGroupDragEnd?.()
+    }
     
     dragStartPosRef.current = null
     dragCurrentPosRef.current = null
@@ -207,7 +288,8 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
     const isSnappingEnabled = e.altKey
 
     // Rotation basée sur la vélocité (deltaX) - manipulation DOM directe, pas de re-render
-    if (innerRef.current) {
+    // Désactivé pour les groupes (pas d'effet physique)
+    if (innerRef.current && element.type !== "group") {
       const rotation = Math.max(-10, Math.min(10, data.deltaX * 0.4))
       innerRef.current.style.setProperty('--tw-rotate', `${rotation}deg`)
     }
@@ -237,6 +319,13 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
         requestAnimationFrame(() => {
             onDragProp(element.id, data.x, data.y)
         })
+    }
+
+    // Drag d'un groupe : déplacer visuellement ses enfants pendant le drag
+    if (element.type === "group" && onGroupDrag) {
+      requestAnimationFrame(() => {
+        onGroupDrag(element.id, data.x, data.y)
+      })
     }
   }
 
@@ -288,6 +377,8 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
         return <CryptoCard element={element} onUpdate={onUpdate} />
       case "rss":
         return <RSSCard element={element} onUpdate={onUpdate} />
+      case "group":
+        return <GroupCard element={element as GroupElement} onUpdate={(updated) => onUpdate(updated)} />
       default:
         return null
     }
@@ -355,7 +446,12 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
           isDragging ? "cursor-grabbing" : "cursor-default transition-all duration-200"
         }`}
         style={{
-          zIndex: isDragging ? 999999 : (element.zIndex || 1),
+          // Pendant un drag, l'élément passe au-dessus de tout dans le canvas.
+          // Pour un groupe, on le met juste en dessous afin que ses enfants puissent passer au-dessus.
+          // La top bar reste au-dessus via son propre z-index / stacking context.
+          zIndex: isDragging
+            ? (element.type === "group" ? 999998 : 999999)
+            : (forcedZIndex ?? element.zIndex || 1),
           willChange: isDragging ? "transform" : "auto",
           opacity: isFocused ? 1 : isDimmed ? 0.15 : (isConnected || isHovered ? 1 : 0.3),
           filter: isFocused
@@ -374,15 +470,38 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
               ref={innerRef}
               className={`relative group rounded-xl ${
                 isDragging
-                  ? "scale-105 shadow-2xl pointer-events-none"
+                  ? (element.type === "group" ? "shadow-2xl pointer-events-none" : "scale-105 shadow-2xl pointer-events-none")
                   : isFocused
                     ? "scale-[1.02] shadow-2xl transition-all duration-200"
                     : "transition-all duration-200"
               } ${isSelected && !isFocused ? "ring-2 ring-blue-500 ring-offset-4 shadow-lg" : ""}`}
             >
               {renderElement()}
+
+              {/* Poignée de resize pour les groupes (désactivée si minimisé) */}
+              {element.type === "group" && !(element as any).collapsed && (
+                <div
+                  className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-white/70 border border-black/10 shadow-md cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  title={language === "fr" ? "Redimensionner le groupe" : "Resize group"}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    const w = (element.width ?? 420)
+                    const h = (element.height ?? 260)
+                    groupResizeStartRef.current = {
+                      x: e.clientX,
+                      y: e.clientY,
+                      width: w,
+                      height: h,
+                    }
+                    setIsResizingGroup(true)
+                  }}
+                >
+                  <MoveDiagonal2 className="w-4 h-4 text-black/50" />
+                </div>
+              )}
               
-              {isHovered && !isDragging && (
+              {isHovered && !isDragging && !(element.type === "group" && (element as any).collapsed) && (
                 <Button
                   variant="destructive"
                   size="icon"
@@ -396,41 +515,58 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
                 </Button>
               )}
 
-              {/* Port de sortie (droite) - Sur tous les éléments */}
-              <div 
-                className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-gray-400 rounded-full cursor-crosshair hover:border-blue-500 hover:scale-125 hover:bg-blue-50 transition-all z-50 opacity-0 group-hover:opacity-100 shadow-sm"
-                title={language === "fr" ? "Tirer un câble" : "Start a cable"}
-                onMouseDown={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault() // Empêche la sélection texte
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  onConnectStart(element.id, rect.x + rect.width/2, rect.y + rect.height/2)
-                }}
-              />
+              {element.type !== "group" && (
+                <>
+                  {/* Port de sortie (droite) - Sur tous les éléments */}
+                  <div 
+                    className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-gray-400 rounded-full cursor-crosshair hover:border-blue-500 hover:scale-125 hover:bg-blue-50 transition-all z-50 opacity-0 group-hover:opacity-100 shadow-sm"
+                    title={language === "fr" ? "Tirer un câble" : "Start a cable"}
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault() // Empêche la sélection texte
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      onConnectStart(element.id, rect.x + rect.width/2, rect.y + rect.height/2)
+                    }}
+                  />
 
-              {/* Port d'entrée (gauche) - Sur tous les éléments */}
-              <div 
-                className={`absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 rounded-full cursor-crosshair hover:scale-125 transition-all z-50 shadow-sm opacity-0 group-hover:opacity-100 ${
-                  element.type === 'prompt' 
-                    ? 'bg-yellow-400 border-gray-600 opacity-100' // Toujours visible pour Prompt
-                    : 'bg-white border-gray-400 hover:border-blue-500 hover:bg-blue-50' 
-                }`}
-                title={language === "fr" ? "Connecter une entrée" : "Connect an input"}
-                onMouseUp={(e) => {
-                  e.stopPropagation()
-                  onConnectEnd(element.id)
-                }}
-              />
+                  {/* Port d'entrée (gauche) - Sur tous les éléments */}
+                  <div 
+                    className={`absolute -left-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 rounded-full cursor-crosshair hover:scale-125 transition-all z-50 shadow-sm opacity-0 group-hover:opacity-100 ${
+                      element.type === 'prompt' 
+                        ? 'bg-yellow-400 border-gray-600 opacity-100' // Toujours visible pour Prompt
+                        : 'bg-white border-gray-400 hover:border-blue-500 hover:bg-blue-50' 
+                    }`}
+                    title={language === "fr" ? "Connecter une entrée" : "Connect an input"}
+                    onMouseUp={(e) => {
+                      e.stopPropagation()
+                      onConnectEnd(element.id)
+                    }}
+                  />
+                </>
+              )}
             </div>
           </ContextMenuTrigger>
-          <ContextMenuContent className="w-48">
+          <ContextMenuContent className="w-64">
             {isSelected && selectionCount > 1 ? (
               <>
-                <ContextMenuItem onClick={onOrganizeSelection}>
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  {language === "fr" ? "Organiser la pile" : "Organize stack"}
-                </ContextMenuItem>
-                <ContextMenuSeparator />
+                {onGroupSelection && (
+                  <>
+                    <ContextMenuItem onClick={onGroupSelection}>
+                      <FolderPlus className="mr-2 h-4 w-4" />
+                      {language === "fr" ? "Grouper la sélection" : "Group selection"}
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                  </>
+                )}
+                {onOrganizeSelection && (
+                  <>
+                    <ContextMenuItem onClick={onOrganizeSelection}>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      {language === "fr" ? "Organiser la pile" : "Organize stack"}
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                  </>
+                )}
                 <ContextMenuItem 
                   className="text-red-600 focus:text-red-600 focus:bg-red-50" 
                   onClick={onDeleteSelection}
@@ -442,9 +578,66 @@ export const CanvasElementComponent = React.memo(function CanvasElementComponent
             ) : (
               <>
                 <ContextMenuItem onClick={() => onFocusElement?.(element.id)}>
-                  {language === "fr" ? "Focus sur cette carte" : "Focus on this card"}
+                  {language === "fr" 
+                    ? (element.type === "group" ? "Focus sur ce groupe" : "Focus sur cette carte") 
+                    : (element.type === "group" ? "Focus on this group" : "Focus on this card")}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
+                {element.type !== "group" ? (
+                  onGroupElement ? (
+                    <>
+                      <ContextMenuItem onClick={() => onGroupElement(element.id)}>
+                        <FolderPlus className="mr-2 h-4 w-4" />
+                        {language === "fr" ? "Grouper" : "Group"}
+                      </ContextMenuItem>
+                      {onAddToExistingGroup && existingGroups.length > 0 && (
+                        <ContextMenuSub>
+                          <ContextMenuSubTrigger>
+                            <FolderPlus className="mr-2 h-4 w-4" />
+                            {language === "fr" ? "Ajouter à un groupe existant" : "Add to existing group"}
+                          </ContextMenuSubTrigger>
+                          <ContextMenuSubContent className="w-56">
+                            {existingGroups
+                              .filter(g => g.id !== element.id)
+                              .map(g => (
+                                <ContextMenuItem
+                                  key={g.id}
+                                  disabled={element.parentId === g.id}
+                                  onClick={() => onAddToExistingGroup(element.id, g.id)}
+                                >
+                                  <span className="truncate">
+                                    {g.title || (language === "fr" ? "Groupe" : "Group")}
+                                  </span>
+                                  {element.parentId === g.id && (
+                                    <span className="ml-auto text-xs text-muted-foreground">
+                                      {language === "fr" ? "Déjà dedans" : "Already"}
+                                    </span>
+                                  )}
+                                </ContextMenuItem>
+                              ))}
+                          </ContextMenuSubContent>
+                        </ContextMenuSub>
+                      )}
+                      {element.parentId && onRemoveFromGroup && (
+                        <ContextMenuItem onClick={() => onRemoveFromGroup(element.id)}>
+                          <FolderMinus className="mr-2 h-4 w-4" />
+                          {language === "fr" ? "Retirer du groupe" : "Remove from group"}
+                        </ContextMenuItem>
+                      )}
+                      <ContextMenuSeparator />
+                    </>
+                  ) : null
+                ) : (
+                  onUngroup ? (
+                    <>
+                      <ContextMenuItem onClick={() => onUngroup(element.id)}>
+                        <FolderMinus className="mr-2 h-4 w-4" />
+                        {language === "fr" ? "Dégrouper" : "Ungroup"}
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                    </>
+                  ) : null
+                )}
                 {element.type === 'image' && (
                     <ContextMenuItem onClick={handleCopyImage}>
                         <Copy className="mr-2 h-4 w-4" />
